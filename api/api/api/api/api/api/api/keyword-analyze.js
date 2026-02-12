@@ -83,4 +83,91 @@ module.exports = async (req, res) => {
 
     const naverBlogTotal = blogData.total || 0;
     const naverNewsTotal = newsData.total || 0;
-    const naverCafeTotal = cafeData.to
+    const naverCafeTotal = cafeData.total || 0;
+
+    const naverTrend = (datalabData?.results?.[0]?.data || []).map(d => ({
+      date: d.period,
+      value: Math.round(d.ratio)
+    }));
+
+    const googleTotal = googleData?.search_information?.total_results || 0;
+    const googleResults = (googleData?.organic_results || []).map((item, i) => ({
+      position: item.position || i + 1,
+      title: item.title || '',
+      link: item.link || '',
+      snippet: item.snippet || '',
+      source: item.source || ''
+    })).slice(0, 10);
+
+    const googleTrend = (trendData?.interest_over_time?.timeline_data || []).map(t => ({
+      date: t.date,
+      value: t.values?.[0]?.extracted_value || 0
+    }));
+
+    const relatedNaver = (googleData?.related_searches || []).map(r => r.query).slice(0, 10);
+    const relatedTrend = (trendData?.related_queries?.rising || []).map(q => q.query).slice(0, 10);
+    const relatedKeywords = [...new Set([...relatedNaver, ...relatedTrend])].slice(0, 15);
+
+    const blogItems = (blogData.items || []).map(item => ({
+      type: 'blog',
+      title: item.title?.replace(/<[^>]*>/g, '') || '',
+      link: item.link || '',
+      description: (item.description || '').replace(/<[^>]*>/g, ''),
+      source: item.bloggername || '',
+      date: item.postdate || ''
+    }));
+
+    const newsItems = (newsData.items || []).map(item => ({
+      type: 'news',
+      title: item.title?.replace(/<[^>]*>/g, '') || '',
+      link: item.link || item.originallink || '',
+      description: (item.description || '').replace(/<[^>]*>/g, ''),
+      source: item.originallink ? new URL(item.originallink).hostname : '',
+      date: item.pubDate || ''
+    }));
+
+    const cafeItems = (cafeData.items || []).map(item => ({
+      type: 'cafe',
+      title: item.title?.replace(/<[^>]*>/g, '') || '',
+      link: item.link || '',
+      description: (item.description || '').replace(/<[^>]*>/g, ''),
+      source: item.cafename || '',
+      date: ''
+    }));
+
+    let trendDirection = '유지';
+    if (naverTrend.length >= 3) {
+      const recent = naverTrend.slice(-3).reduce((a, b) => a + b.value, 0) / 3;
+      const older = naverTrend.slice(-6, -3).reduce((a, b) => a + b.value, 0) / 3;
+      if (recent > older * 1.1) trendDirection = '상승';
+      else if (recent < older * 0.9) trendDirection = '하락';
+    }
+
+    res.json({
+      ok: true,
+      keyword,
+      summary: {
+        naverBlogTotal,
+        naverNewsTotal,
+        naverCafeTotal,
+        googleTotal,
+        totalContent: naverBlogTotal + naverNewsTotal + naverCafeTotal,
+        trendDirection
+      },
+      trend: {
+        naver: naverTrend,
+        google: googleTrend
+      },
+      content: {
+        blog: blogItems,
+        news: newsItems,
+        cafe: cafeItems,
+        google: googleResults
+      },
+      relatedKeywords
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: '키워드 분석 실패', message: err.message });
+  }
+};
