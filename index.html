@@ -1,0 +1,3006 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SNS 콘텐츠 생성기 v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#0f0f14;--bg2:#16161d;--bg3:#1c1c26;--bg4:#22222e;--border:#2a2a3a;--t1:#f0f0f5;--t2:#9a9ab0;--t3:#5a5a72;--ac:#f97316;--acs:rgba(249,115,22,.08);--b:#60a5fa;--g:#34d399;--r:#f87171;--ff:'Inter',sans-serif;--fb:'Inter',sans-serif;--fm:'SF Mono',monospace;--r1:8px;--r2:12px;--r3:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff);background:var(--bg1);color:var(--t1);font-size:15px;line-height:1.55;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.wrap{display:flex;min-height:100vh}
+.side{width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:14px 10px;display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;z-index:10}
+.logo{font-size:1.1em;font-weight:700;padding:8px;margin-bottom:14px;display:flex;align-items:center;gap:8px}.logo .dot{width:10px;height:10px;border-radius:50%;background:var(--ac)}
+.nav-i{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:none;color:var(--t2);font-size:.88em;border-radius:var(--r1);cursor:pointer;text-align:left;transition:.15s;font-family:var(--fb)}
+.nav-i:hover{background:var(--bg4);color:var(--t1)}.nav-i.a,.nav-i:active{background:var(--acs);color:var(--ac)}
+.ni{font-size:1.1em;width:20px;text-align:center;flex-shrink:0}
+.nav-sep{height:1px;background:var(--border);margin:8px 4px}
+.main{margin-left:220px;flex:1;padding:20px 28px;max-width:900px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+.top-l{display:flex;align-items:center;gap:8px}.top-l .hamburger{display:none;background:none;border:none;color:var(--t1);font-size:1.4em;cursor:pointer}
+.mbadge{background:var(--acs);color:var(--ac);padding:2px 8px;border-radius:10px;font-size:.78em;font-weight:600}
+.btn-s{background:var(--bg4);color:var(--t2);border:1px solid var(--border);padding:4px 10px;border-radius:var(--r1);cursor:pointer;font-size:.82em;transition:.15s;font-family:var(--fb)}
+.btn-s:hover{border-color:var(--ac);color:var(--ac)}
+.mnav{display:none;overflow-x:auto;gap:4px;padding:4px 0;margin-bottom:10px}
+.mnav button{flex-shrink:0;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;color:var(--t2);font-size:.8em;cursor:pointer;white-space:nowrap;font-family:var(--fb)}
+.mnav button.a{background:var(--acs);color:var(--ac);border-color:rgba(249,115,22,.2)}
+.tab-c{display:none}.tab-c.a{display:block}
+.ph{margin-bottom:16px}.pt{font-size:1.25em;font-weight:700;display:flex;align-items:center;gap:8px}.ps{color:var(--t2);font-size:.88em;margin-top:2px}
+.sc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;margin-bottom:14px}
+.sch{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sct{font-weight:600;font-size:.92em}.scb{padding:14px}
+.mi{width:100%;padding:8px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:var(--r1);color:var(--t1);font-size:.9em;font-family:var(--fb);outline:none;transition:.15s;margin-bottom:8px}
+.mi:focus{border-color:var(--ac)}.mi::placeholder{color:var(--t3)}
+select.mi{cursor:pointer;appearance:none}
+textarea.mi{resize:vertical;min-height:80px}
+.mlbl{font-size:.82em;color:var(--t2);margin-bottom:3px;font-weight:600}
+.btn-p{padding:8px 18px;background:var(--ac);color:#fff;border:none;border-radius:var(--r1);cursor:pointer;font-weight:600;font-size:.88em;transition:.15s;font-family:var(--fb)}.btn-p:hover{filter:brightness(1.1)}.btn-p:disabled{opacity:.5;cursor:not-allowed}.btn-p.full{width:100%}
+.btn-o{padding:6px 14px;background:var(--bg4);color:var(--t2);border:1px solid var(--border);border-radius:var(--r1);cursor:pointer;font-size:.84em;transition:.15s;font-family:var(--fb)}.btn-o:hover{border-color:var(--ac);color:var(--ac)}
+.bg{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.steps{display:flex;gap:0;margin-bottom:14px;background:var(--bg3);border-radius:var(--r2);overflow:hidden;border:1px solid var(--border)}
+.step{flex:1;padding:8px 6px;text-align:center;font-size:.8em;color:var(--t3);cursor:pointer;transition:.2s;position:relative}
+.step.a{color:var(--ac);background:var(--acs)}.step.done{color:var(--g)}
+.step-n{display:block;font-weight:700;font-size:1em;font-family:var(--fm)}
+.sc-body{display:none}.sc-body.a{display:block}
+.ra{display:none;margin-top:10px}.ra.show{display:block}
+.rc{font-size:.88em;color:var(--t2);line-height:1.6;white-space:pre-wrap;max-height:300px;overflow-y:auto;padding:8px}
+.ig{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.isl{width:64px;height:64px;border:1px dashed var(--border);border-radius:var(--r1);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.15s;flex-shrink:0;position:relative}
+.isl:hover{border-color:var(--ac)}.isl.filled{border-style:solid}.isl img{width:100%;height:100%;object-fit:cover}
+.ebtn{padding:4px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:16px;color:var(--t2);font-size:.8em;cursor:pointer;transition:.15s;font-family:var(--fb)}.ebtn:hover{border-color:var(--ac);color:var(--ac)}
+.fpi{margin-bottom:6px}.fpt{display:flex;align-items:center;gap:4px;width:100%;padding:6px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:var(--r1);color:var(--t2);font-size:.85em;cursor:pointer;font-family:var(--fb)}.fpt.a{color:var(--g);border-color:rgba(52,211,153,.2)}
+.fpc{display:none;padding:6px 0}.fpc.show{display:block}.fta{width:100%;padding:6px 8px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--r1);color:var(--t1);font-size:.85em;font-family:var(--fb);min-height:50px;resize:vertical}
+.ad-plats{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.ad-plat{padding:4px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:16px;color:var(--t2);font-size:.8em;cursor:pointer;transition:.15s;font-family:var(--fb)}.ad-plat.a{background:var(--acs);color:var(--ac);border-color:rgba(249,115,22,.2)}
+.cmp-vs{display:grid;grid-template-columns:1fr 50px 1fr;gap:10px;align-items:start}.cmp-mid{text-align:center;font-weight:700;color:var(--ac);padding-top:30px}
+.dt{width:100%;border-collapse:collapse;font-size:.82em}.dt th{background:var(--bg4);padding:8px 6px;text-align:left;font-weight:600;color:var(--t2);border-bottom:1px solid var(--border)}.dt td{padding:6px;border-bottom:1px solid var(--border);color:var(--t2)}
+.ts{overflow-x:auto}
+.badge{padding:2px 6px;border-radius:8px;font-size:.78em;font-weight:600}.badge.green{background:rgba(52,211,153,.15);color:var(--g)}.badge.yellow{background:rgba(250,204,21,.12);color:#facc15}.badge.blue{background:rgba(96,165,250,.12);color:var(--b)}.badge.red{background:rgba(248,113,113,.12);color:var(--r)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.stat-card{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r2);padding:10px;text-align:center}
+.stat-v{font-size:1.3em;font-weight:700;color:var(--ac);font-family:var(--fm)}.stat-l{font-size:.78em;color:var(--t2);margin-top:2px}
+.tip-box{padding:10px 12px;background:var(--acs);border:1px solid rgba(249,115,22,.12);border-radius:var(--r2);font-size:.88em;color:var(--t2);line-height:1.6;margin-top:10px}.tip-box b{color:var(--ac)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:99;backdrop-filter:blur(4px)}.modal.show{display:flex}
+.modal-c{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r3);padding:20px;width:90%;max-width:400px}
+.modal-t{font-weight:700;font-size:1.05em;margin-bottom:12px}
+.md{font-size:.8em;color:var(--t3);margin-top:6px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:4px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg4);color:var(--t1);padding:10px 20px;border-radius:var(--r2);font-size:.88em;border:1px solid var(--border);transition:.3s;opacity:0;z-index:100}.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.p-logo{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0}
+.p-logo.naver{background:#03C75A}.p-logo.naver::after{content:'N';color:#fff;font-weight:800;font-size:13px}
+.p-logo.ig{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}.p-logo.ig::after{content:'';width:11px;height:11px;border:2px solid #fff;border-radius:3px}
+.p-logo.fbk{background:#1877F2}.p-logo.fbk::after{content:'f';color:#fff;font-weight:800;font-size:14px}
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.ab-col{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r2);padding:12px;position:relative}
+.ab-lbl{position:absolute;top:-8px;left:12px;padding:0 6px;font-size:.78em;font-weight:700;background:var(--bg4);border-radius:4px}
+.ab-lbl.a-lbl{color:var(--ac)}.ab-lbl.b-lbl{color:var(--b)}
+.credit-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--r2);margin-top:8px;font-size:.82em;color:var(--t2)}.credit-bar .cv{color:var(--ac);font-family:var(--fm);font-weight:600}
+.sub-pills{display:flex;gap:4px;margin-bottom:12px}.sub-pill{padding:6px 14px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;font-size:.88em;cursor:pointer;transition:.2s;color:var(--t2);font-family:var(--fb)}.sub-pill.a{background:var(--acs);color:var(--ac);border-color:rgba(249,115,22,.2)}
+.ooh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.ooh-card{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r3);padding:14px;transition:.2s;cursor:pointer}.ooh-card:hover{border-color:var(--ac);transform:translateY(-2px)}
+.ooh-icon{font-size:1.6em;margin-bottom:4px}.ooh-name{font-weight:600;font-size:.95em;margin-bottom:4px}.ooh-price{font-size:.85em;color:var(--ac);margin-bottom:4px}.ooh-info{font-size:.8em;color:var(--t2);line-height:1.5}
+.ooh-detail-box{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r3);padding:16px;margin-top:10px;display:none}.ooh-detail-box.show{display:block}
+.tag-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.tag{padding:2px 8px;background:var(--bg4);border:1px solid var(--border);border-radius:12px;font-size:.78em;color:var(--t2)}
+.dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
+.dash-grid.full{grid-column:1/-1}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.hero-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r3);padding:18px 20px;transition:all .3s}
+.hero-card:hover{border-color:rgba(255,255,255,.08);transform:translateY(-2px)}
+.hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hero-label{font-size:.9em;color:var(--t2);font-weight:500}
+.hero-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1em}
+.hero-icon.views{background:rgba(249,115,22,.15);color:var(--ac)}
+.hero-icon.exposure{background:rgba(248,113,113,.15);color:var(--r)}
+.hero-icon.posts{background:rgba(96,165,250,.15);color:var(--b)}
+.hero-icon.engage{background:rgba(139,92,246,.15);color:#8b5cf6}
+.hero-val{font-size:2em;font-weight:700;font-family:var(--fm);color:var(--t1);line-height:1.2;margin-bottom:6px}
+.hero-change{font-size:.85em;font-weight:600}
+.hero-change.up{color:var(--g)}.hero-change.down{color:var(--r)}.hero-change .arrow{margin-right:2px}
+.hero-sub{font-size:.82em;color:var(--t3);margin-top:2px}
+.trend-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r3);padding:20px;margin-bottom:16px}
+.trend-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.trend-title{font-size:.95em;font-weight:600;display:flex;align-items:center;gap:8px}
+.trend-tabs{display:flex;gap:0;background:var(--bg4);border-radius:8px;padding:2px;border:1px solid var(--border)}
+.trend-tab{padding:5px 14px;border-radius:6px;font-size:.82em;cursor:pointer;color:var(--t3);font-family:var(--fb);border:none;background:none;transition:.2s;font-weight:500}
+.trend-tab.a{background:var(--bg1);color:var(--t1);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.trend-tab:hover:not(.a){color:var(--t2)}
+.trend-chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding-top:10px}
+.trend-bar-group{flex:1;display:flex;gap:2px;align-items:flex-end;height:100%}
+.trend-bar{border-radius:4px 4px 0 0;transition:all .4s cubic-bezier(.4,0,.2,1);min-width:8px;flex:1;cursor:pointer;position:relative}
+.trend-bar:hover{filter:brightness(1.2)}
+.trend-bar.naver{background:#3B82F6}.trend-bar.insta{background:var(--ac)}
+.trend-day-label{text-align:center;font-size:.72em;color:var(--t3);margin-top:6px;font-weight:500}
+.trend-legend{display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.trend-legend-item{display:flex;align-items:center;gap:5px;font-size:.75em;color:var(--t2)}
+.trend-legend-dot{width:8px;height:8px;border-radius:2px}
+.visual-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r3);padding:20px;height:100%}
+.card-header{font-size:1em;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px;color:var(--t1)}
+.card-icon{font-size:1.4em}
+.progress-row{margin-bottom:12px}
+.progress-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:.85em}
+.progress-bar{background:var(--bg1);height:12px;border-radius:20px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:20px;transition:all .8s cubic-bezier(.4,0,.2,1);position:relative;background:linear-gradient(90deg,var(--ac),var(--b))}
+.progress-fill::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 2s infinite}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mini-card{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r2);padding:14px;text-align:center;transition:all .2s}
+.mini-card:hover{border-color:var(--ac);transform:translateY(-2px)}
+.mini-num{font-size:1.6em;font-weight:700;font-family:var(--fm);color:var(--ac);margin-bottom:4px}
+.mini-label{font-size:.82em;color:var(--t3)}
+.kw-grid{display:flex;flex-wrap:wrap;gap:8px}
+.kw-pill{padding:8px 14px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;font-size:.9em;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.kw-pill:hover{background:var(--acs);border-color:var(--ac);color:var(--ac);transform:scale(1.05)}
+.kw-score{background:linear-gradient(135deg,var(--ac),var(--b));color:#fff;padding:3px 8px;border-radius:12px;font-size:.8em;font-weight:600}
+.strength-grid{display:grid;gap:12px}
+.strength-item{padding:12px;background:var(--bg4);border-left:3px solid var(--g);border-radius:var(--r2);font-size:.9em;color:var(--t2);line-height:1.6;transition:.2s}
+.strength-item:hover{background:var(--bg3)}
+.strength-item.weak{border-left-color:var(--r)}
+.insight-box{background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(96,165,250,.08));border:1px solid rgba(249,115,22,.2);border-radius:var(--r3);padding:18px;margin-bottom:16px}
+.insight-title{font-size:1em;font-weight:600;color:var(--ac);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.insight-text{font-size:.9em;color:var(--t2);line-height:1.7}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg4);border-radius:var(--r2);margin-bottom:8px;font-size:.9em;transition:.2s}
+.compare-row:hover{background:var(--bg3);border:1px solid var(--border)}
+.compare-label{color:var(--t2)}
+.compare-values{display:flex;align-items:center;gap:12px}
+.compare-ours{color:var(--ac);font-weight:600}
+.compare-theirs{color:var(--t3);font-size:.9em}
+.badge{padding:4px 10px;border-radius:12px;font-size:.75em;font-weight:600}
+.badge.good{background:rgba(52,211,153,.15);color:var(--g)}
+.badge.bad{background:rgba(248,113,113,.15);color:var(--r)}
+.badge.neutral{background:rgba(96,165,250,.15);color:var(--b)}
+.platform-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.platform-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px;transition:all .3s;cursor:pointer;position:relative;overflow:hidden}
+.platform-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;transition:.3s}
+.platform-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2);border-color:var(--ac)}
+.platform-card.naver::before{background:#03C75A}
+.platform-card.insta::before{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}
+.platform-card.facebook::before{background:#1877F2}
+.platform-card.homepage::before{background:var(--ac)}
+.pc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.pc-title{display:flex;align-items:center;gap:6px;font-size:.82em;font-weight:600}
+.pc-logo{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+.pc-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.78em}
+.pc-row-label{color:var(--t3)}
+.pc-row-val{font-weight:600;font-family:var(--fm);color:var(--t1)}
+.pc-row-val.accent{color:var(--ac)}
+.pc-eff-bar{margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.pc-eff-row{display:flex;align-items:center;gap:6px}
+.pc-grade{font-size:.85em;font-weight:700;padding:2px 8px;border-radius:8px;font-family:var(--fm)}
+.pc-grade.s{background:rgba(52,211,153,.2);color:var(--g)}.pc-grade.a{background:rgba(249,115,22,.15);color:var(--ac)}.pc-grade.b{background:rgba(96,165,250,.15);color:var(--b)}.pc-grade.c{background:rgba(248,113,113,.15);color:var(--r)}
+.pc-cost{font-size:.72em;color:var(--t2)}
+.kw-rank-table{width:100%;font-size:.78em;border-collapse:collapse}
+.kw-rank-table th{text-align:left;padding:6px 8px;color:var(--t3);font-weight:600;border-bottom:1px solid var(--border);font-size:.9em}
+.kw-rank-table td{padding:6px 8px;border-bottom:1px solid rgba(42,42,58,.5);color:var(--t2)}
+.kw-rank-table tr:hover{background:var(--bg4)}
+.rank-num{font-family:var(--fm);font-weight:700;font-size:1em}
+.rank-num.top{color:var(--g)}.rank-num.mid{color:var(--ac)}.rank-num.low{color:var(--r)}
+.rank-change{font-size:.8em;font-weight:600}
+.rank-change.up{color:var(--g)}.rank-change.down{color:var(--r)}.rank-change.same{color:var(--t3)}
+@keyframes sp{to{transform:rotate(360deg)}}@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+#blog-editor:empty:before{content:attr(data-placeholder);color:var(--t3);pointer-events:none}
+#blog-editor img{max-width:100%;border-radius:6px;margin:10px 0;display:block;cursor:pointer}
+#blog-editor img:hover{outline:2px solid var(--ac);outline-offset:2px}
+#blog-editor img.selected{outline:2px solid var(--r);outline-offset:2px}
+#blog-editor p{margin-bottom:6px}
+.blog-preview{background:#fff;border-radius:12px;max-width:680px;overflow:hidden;color:#333;font-family:'Noto Sans KR','Malgun Gothic',sans-serif}
+.bp-header{background:#fff;padding:16px 20px;border-bottom:1px solid #eee}
+.bp-profile{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bp-avatar{width:36px;height:36px;border-radius:50%;background:#03C75A;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85em}
+.bp-author{font-size:.88em;font-weight:600;color:#333}
+.bp-date{font-size:.78em;color:#999}
+.bp-title{font-size:1.3em;font-weight:700;color:#222;line-height:1.4;padding:20px 20px 10px}
+.bp-body{padding:0 20px 20px;font-size:.92em;line-height:1.9;color:#333;word-break:keep-all}
+.bp-body p{margin-bottom:14px}
+.bp-body img{width:100%;border-radius:6px;margin:12px 0}
+.bp-body .bp-img-placeholder{background:#f5f5f5;border:1px dashed #ddd;border-radius:6px;padding:30px;text-align:center;color:#aaa;margin:12px 0;font-size:.85em}
+.bp-tags{padding:10px 20px 16px;display:flex;flex-wrap:wrap;gap:4px}
+.bp-tag{font-size:.82em;color:#03C75A;cursor:default}
+.bp-footer{padding:12px 20px;border-top:1px solid #eee;display:flex;gap:16px;font-size:.82em;color:#888}
+.bp-footer span{display:flex;align-items:center;gap:4px;cursor:default}
+@media(max-width:768px){.blog-preview{border-radius:0}.side{display:none;position:fixed;width:260px}.side.open{display:flex}.main{margin-left:0;padding:12px}.mnav{display:flex}.top-l .hamburger{display:block}.ab-grid{grid-template-columns:1fr}.cmp-vs{grid-template-columns:1fr}.ooh-cards{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.hero-grid{grid-template-columns:1fr 1fr}.platform-cards{grid-template-columns:repeat(2,1fr)}.kw-rank-table{font-size:.7em}.trend-chart{height:120px}}
+</style></head><body>
+<div class="wrap">
+<div class="side" id="sidebar">
+<div class="logo"><span class="dot"></span>SNS Generator</div>
+<button class="nav-i a" onclick="go('blog')" data-t="blog"><span class="ni"><span class="p-logo naver"></span></span>블로그</button>
+<button class="nav-i" onclick="go('insta')" data-t="insta"><span class="ni"><span class="p-logo ig"></span></span>인스타그램</button>
+<button class="nav-i" onclick="go('fb')" data-t="fb"><span class="ni"><span class="p-logo fbk"></span></span>페이스북</button>
+<div class="nav-sep"></div>
+<button class="nav-i" onclick="go('sp')" data-t="sp"><span class="ni">📍</span>스마트플레이스</button>
+<button class="nav-i" onclick="go('ooh')" data-t="ooh"><span class="ni">📋</span>옥외광고</button>
+<div class="nav-sep"></div>
+<button class="nav-i" onclick="go('dash')" data-t="dash"><span class="ni">📊</span>대시보드</button>
+<button class="nav-i" onclick="go('kwresearch')" data-t="kwresearch"><span class="ni">🔍</span>키워드 분석</button>
+<button class="nav-i" onclick="go('compare')" data-t="compare"><span class="ni">⚖️</span>비교 분석</button>
+<button class="nav-i" onclick="go('adsim')" data-t="adsim"><span class="ni">📢</span>광고 시뮬레이터</button>
+<button class="nav-i" onclick="go('style')" data-t="style"><span class="ni">🎨</span>문체 학습</button>
+<div class="nav-sep"></div>
+<button class="nav-i" onclick="showM('m-api')"><span class="ni">🔑</span>API 설정</button>
+<button class="nav-i" onclick="showM('m-myinfo')"><span class="ni">👤</span>내 정보</button>
+</div>
+
+<div class="main">
+<div class="top"><div class="top-l"><button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><span class="mbadge">AI Engine v5</span></div><div class="top-r"><button class="btn-s" onclick="showM('m-myinfo')">👤 내 정보</button><button class="btn-s" onclick="showM('m-api')">🔑 API</button></div></div>
+<div class="mnav" id="mnav"></div>
+
+<!-- ==================== BLOG TAB ==================== -->
+<div class="tab-c a" id="blog-tab">
+<div class="ph"><div class="pt"><span class="p-logo naver"></span> 네이버 블로그</div><div class="ps">AI가 A/B 두 가지 안을 생성하고 비교 분석합니다</div></div>
+<div class="steps" id="blog-steps"><div class="step a" onclick="bst(0)"><span class="step-n">01</span>정보 입력</div><div class="step" onclick="bst(1)"><span class="step-n">02</span>A/B 생성</div><div class="step" onclick="bst(2)"><span class="step-n">03</span>수정·검수</div><div class="step" onclick="bst(3)"><span class="step-n">04</span>이미지·완성</div><div class="step" onclick="bst(4)"><span class="step-n">05</span>미리보기</div></div>
+<div class="sc-body a" id="bs0">
+<div class="sc"><div class="sch"><div class="sct">📝 블로그 정보</div></div><div class="scb">
+<div class="mlbl">목적</div><select class="mi" id="b-purpose"><option>시공사례 홍보</option><option>장비 소개</option><option>행사 후기</option><option>기술 정보</option><option>이벤트/프로모션</option></select>
+<div class="mlbl">행사/현장명</div><input class="mi" id="b-event" placeholder="예: 2024 코엑스 전시회">
+<div class="mlbl">상세 내용</div><textarea class="mi" id="b-detail" placeholder="주요 내용, 특이사항 등..."></textarea>
+<div class="mlbl">강조 포인트</div><input class="mi" id="b-highlight" placeholder="예: 초대형 LED, 실시간 중계">
+<div class="bg"><button class="btn-p full" onclick="bst(1)">다음 → A/B 생성</button></div>
+</div></div></div>
+<div class="sc-body" id="bs1">
+<button class="btn-p full" onclick="genBlog()" id="blog-gen-btn">A/B 두 가지 안 생성하기</button>
+<div class="ra" id="blog-ra">
+<div class="ab-grid"><div class="ab-col"><span class="ab-lbl a-lbl">A안 (전문형)</span><div class="rc" id="blog-rc-a"></div></div><div class="ab-col"><span class="ab-lbl b-lbl">B안 (친근형)</span><div class="rc" id="blog-rc-b"></div></div></div>
+<div class="sc" style="margin-top:10px"><div class="sch"><div class="sct">⚖️ A/B 비교 분석</div></div><div class="scb"><div class="rc" id="blog-ab-diff"></div></div></div>
+<div class="bg"><button class="btn-p" onclick="pickAB('blog','a')">✅ A안 선택</button><button class="btn-p" onclick="pickAB('blog','b')" style="background:var(--b)">✅ B안 선택</button><button class="btn-o" onclick="genBlog()">🔄 다시</button></div>
+<div class="credit-bar">사용 크레딧: <span class="cv" id="blog-credit">$0.00</span> | 누적: <span class="cv" id="blog-credit-total">$0.00</span></div>
+</div></div>
+<div class="sc-body" id="bs2">
+<div class="sc"><div class="sch"><div class="sct">✏️ 수정·검수</div></div><div class="scb">
+<!-- 에디터 툴바 -->
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;padding:6px 8px;background:var(--bg1);border:1px solid var(--border);border-bottom:none;border-radius:var(--r1) var(--r1) 0 0">
+<button class="ebtn" onclick="aiCheck('blog-edit-ta','spell')">🔍 오탈자</button>
+<button class="ebtn" onclick="aiCheck('blog-edit-ta','sensitive')">⚠️ 예민표현</button>
+<button class="ebtn" onclick="aiCheck('blog-edit-ta','improve')">✨ 다듬기</button>
+<button class="ebtn" onclick="editorInsertTag()">🏷️ 태그</button>
+<span style="width:1px;background:var(--border);margin:0 2px"></span>
+<button class="ebtn" style="background:var(--acs);border-color:rgba(249,115,22,.2);color:var(--ac)" onclick="editorInsertImage()">📷 이미지 삽입</button>
+<input type="file" id="blog-inline-file" accept="image/*" style="display:none" onchange="handleEditorImg(this)">
+</div>
+<!-- 리치 에디터 -->
+<div id="blog-editor" contenteditable="true" style="width:100%;min-height:280px;padding:14px;background:var(--bg4);border:1px solid var(--border);border-radius:0 0 var(--r1) var(--r1);color:var(--t1);font-size:.9em;font-family:var(--fb);line-height:1.8;outline:none;overflow-y:auto;max-height:500px;word-break:keep-all" data-placeholder="선택한 안이 여기에 표시됩니다. 글 사이에 이미지를 자유롭게 넣을 수 있습니다."></div>
+<!-- 숨겨진 textarea (AI 연동용) -->
+<textarea class="mi" id="blog-edit-ta" style="display:none"></textarea>
+
+<div class="bg" style="margin-top:8px"><button class="btn-p" onclick="bst(3)">다음 → 완성</button><button class="btn-o" onclick="bst(1)">← 이전</button></div>
+</div></div></div>
+<div class="sc-body" id="bs3">
+<div class="sc"><div class="sch"><div class="sct">🖼️ 대표 이미지 (썸네일)</div></div><div class="scb">
+<div class="mlbl">블로그 상단에 표시될 대표 이미지를 선택하세요</div>
+<div class="ig" id="blog-imgs"><div class="isl" onclick="this.querySelector('input').click()"><span style="color:var(--t3);font-size:1.4em">+</span><input type="file" accept="image/*" style="display:none" onchange="addI(this,'blog-imgs')"></div></div>
+</div></div>
+<div class="sc"><div class="sch"><div class="sct">📋 최종 결과</div></div><div class="scb"><div class="rc" id="blog-final" style="max-height:400px"></div><div class="bg"><button class="btn-p" onclick="copyF('blog')">📋 전체 복사</button><button class="btn-p" onclick="bst(4)" style="background:var(--b)">👀 미리보기</button><button class="btn-o" onclick="bst(2)">← 수정</button></div></div></div>
+</div>
+<div class="sc-body" id="bs4">
+<div class="sc"><div class="sch"><div class="sct">👀 네이버 블로그 미리보기</div><div style="display:flex;gap:4px"><button class="btn-o" onclick="bst(2)">✏️ 수정하기</button><button class="btn-o" onclick="copyF('blog')">📋 복사</button></div></div><div class="scb" style="background:var(--bg1);padding:20px">
+<div class="blog-preview" id="blog-preview-card"></div>
+</div></div>
+</div></div>
+
+<!-- ==================== INSTA TAB ==================== -->
+<div class="tab-c" id="insta-tab">
+<div class="ph"><div class="pt"><span class="p-logo ig"></span> 인스타그램</div><div class="ps">A/B 캡션을 비교 생성합니다</div></div>
+<div class="steps" id="insta-steps"><div class="step a" onclick="ist(0)"><span class="step-n">01</span>사진·정보</div><div class="step" onclick="ist(1)"><span class="step-n">02</span>A/B 캡션</div><div class="step" onclick="ist(2)"><span class="step-n">03</span>검수·완성</div></div>
+<div class="sc-body a" id="is0">
+<div class="sc"><div class="sch"><div class="sct">📸 정보 입력</div></div><div class="scb">
+<div class="ig" id="insta-imgs"><div class="isl" onclick="this.querySelector('input').click()"><span style="color:var(--t3);font-size:1.4em">+</span><input type="file" accept="image/*" style="display:none" onchange="addI(this,'insta-imgs')"></div></div>
+<button class="btn-o" onclick="addIS('insta-imgs')">+ 사진 추가</button>
+<div class="fpi"><button class="fpt a" onclick="togFP(this)">✅ 도입 문구</button><div class="fpc show"><textarea class="fta" id="i-intro">안녕하세요, 방송중계 전문 기업입니다! 🎬📡</textarea></div></div>
+<div class="fpi"><button class="fpt a" onclick="togFP(this)">✅ 마무리 문구</button><div class="fpc show"><textarea class="fta" id="i-outro">📞 문의는 DM 또는 전화로!\n🔗 프로필 링크에서 자세한 정보 확인</textarea></div></div>
+<div class="mlbl">캡션 내용</div><textarea class="mi" id="i-content" placeholder="캡션에 포함할 내용..."></textarea>
+<div class="mlbl">해시태그 카테고리</div>
+<div class="ad-plats" id="i-htag">
+<button class="ad-plat a" data-tags="#방송중계 #LED전광판 #이벤트영상 #행사촬영" onclick="this.classList.toggle('a')">방송중계</button>
+<button class="ad-plat" data-tags="#LED스크린 #전광판렌탈 #이벤트 #무대연출" onclick="this.classList.toggle('a')">LED장비</button>
+<button class="ad-plat" data-tags="#기업행사 #컨퍼런스 #세미나 #전시회" onclick="this.classList.toggle('a')">행사</button>
+</div>
+<div class="bg"><button class="btn-p full" onclick="ist(1)">다음 → A/B 캡션 생성</button></div>
+</div></div></div>
+<div class="sc-body" id="is1">
+<button class="btn-p full" onclick="genInsta()" id="insta-gen-btn">A/B 캡션 생성</button>
+<div class="ra" id="insta-ra">
+<div class="ab-grid"><div class="ab-col"><span class="ab-lbl a-lbl">A안 (정보형)</span><div class="rc" id="insta-rc-a"></div></div><div class="ab-col"><span class="ab-lbl b-lbl">B안 (감성형)</span><div class="rc" id="insta-rc-b"></div></div></div>
+<div class="sc" style="margin-top:10px"><div class="sch"><div class="sct">⚖️ 비교</div></div><div class="scb"><div class="rc" id="insta-ab-diff"></div></div></div>
+<div class="bg"><button class="btn-p" onclick="pickAB('insta','a')">✅ A안</button><button class="btn-p" onclick="pickAB('insta','b')" style="background:var(--b)">✅ B안</button><button class="btn-o" onclick="genInsta()">🔄</button></div>
+<div class="credit-bar">크레딧: <span class="cv" id="insta-credit">$0.00</span> | 누적: <span class="cv" id="insta-credit-total">$0.00</span></div>
+</div></div>
+<div class="sc-body" id="is2">
+<div class="sc"><div class="sch"><div class="sct">검수·완성</div></div><div class="scb">
+<textarea class="mi" id="insta-edit-ta" style="min-height:120px"></textarea>
+<div class="bg"><button class="ebtn" onclick="aiCheck('insta-edit-ta','spell')">🔍 오탈자</button><button class="ebtn" onclick="aiCheck('insta-edit-ta','improve')">✨ 다듬기</button></div>
+<div class="bg"><button class="btn-p" onclick="copyF('insta')">📋 복사</button><button class="btn-o" onclick="ist(1)">← 이전</button></div>
+</div></div></div></div>
+
+<!-- ==================== FB TAB ==================== -->
+<div class="tab-c" id="fb-tab">
+<div class="ph"><div class="pt"><span class="p-logo fbk"></span> 페이스북</div><div class="ps">A/B 게시물 비교 생성</div></div>
+<div class="steps" id="fb-steps"><div class="step a" onclick="fst(0)"><span class="step-n">01</span>정보</div><div class="step" onclick="fst(1)"><span class="step-n">02</span>A/B 생성</div><div class="step" onclick="fst(2)"><span class="step-n">03</span>완성</div></div>
+<div class="sc-body a" id="fs0">
+<div class="sc"><div class="sch"><div class="sct">📘 정보 입력</div></div><div class="scb">
+<div class="ig" id="fb-imgs"><div class="isl" onclick="this.querySelector('input').click()"><span style="color:var(--t3);font-size:1.4em">+</span><input type="file" accept="image/*" style="display:none" onchange="addI(this,'fb-imgs')"></div></div>
+<div class="fpi"><button class="fpt a" onclick="togFP(this)">✅ 도입 문구</button><div class="fpc show"><textarea class="fta" id="f-intro">방송중계·LED시스템 전문 기업이 전하는 현장 이야기 📺</textarea></div></div>
+<div class="fpi"><button class="fpt a" onclick="togFP(this)">✅ 마무리 문구</button><div class="fpc show"><textarea class="fta" id="f-outro">자세한 문의는 홈페이지 또는 전화로 연락주세요! 📞</textarea></div></div>
+<div class="mlbl">게시물 내용</div><textarea class="mi" id="f-content" placeholder="게시물 내용..."></textarea>
+<div class="bg"><button class="btn-p full" onclick="fst(1)">A/B 생성 →</button></div>
+</div></div></div>
+<div class="sc-body" id="fs1">
+<button class="btn-p full" onclick="genFB()" id="fb-gen-btn">A/B 게시물 생성</button>
+<div class="ra" id="fb-ra">
+<div class="ab-grid"><div class="ab-col"><span class="ab-lbl a-lbl">A안 (정보형)</span><div class="rc" id="fb-rc-a"></div></div><div class="ab-col"><span class="ab-lbl b-lbl">B안 (공감형)</span><div class="rc" id="fb-rc-b"></div></div></div>
+<div class="sc" style="margin-top:10px"><div class="sch"><div class="sct">⚖️ 비교</div></div><div class="scb"><div class="rc" id="fb-ab-diff"></div></div></div>
+<div class="bg"><button class="btn-p" onclick="pickAB('fb','a')">✅ A안</button><button class="btn-p" onclick="pickAB('fb','b')" style="background:var(--b)">✅ B안</button><button class="btn-o" onclick="genFB()">🔄</button></div>
+<div class="credit-bar">크레딧: <span class="cv" id="fb-credit">$0.00</span> | 누적: <span class="cv" id="fb-credit-total">$0.00</span></div>
+</div></div>
+<div class="sc-body" id="fs2">
+<div class="sc"><div class="sch"><div class="sct">완성</div></div><div class="scb">
+<textarea class="mi" id="fb-edit-ta" style="min-height:120px"></textarea>
+<div class="bg"><button class="ebtn" onclick="aiCheck('fb-edit-ta','spell')">🔍 오탈자</button><button class="ebtn" onclick="aiCheck('fb-edit-ta','improve')">✨ 다듬기</button></div>
+<div class="bg"><button class="btn-p" onclick="copyF('fb')">📋 복사</button><button class="btn-o" onclick="fst(1)">← 이전</button></div>
+</div></div></div></div>
+
+<!-- ==================== SMART PLACE TAB ==================== -->
+<div class="tab-c" id="sp-tab">
+<div class="ph"><div class="pt">📍 스마트플레이스</div><div class="ps">네이버 플레이스 성과 분석 & 키워드 최적화</div></div>
+
+<div class="sub-pills" id="sp-pills">
+<button class="sub-pill a" onclick="setSpMode('myplace')">🏪 내 플레이스</button>
+<button class="sub-pill" onclick="setSpMode('dashboard')">📊 성과 대시보드</button>
+<button class="sub-pill" onclick="setSpMode('keyword')">🔑 키워드 최적화</button>
+<button class="sub-pill" onclick="setSpMode('ranking')">🏆 지역 순위</button>
+</div>
+
+<!-- ===== 성과 대시보드 ===== -->
+<div id="sp-dashboard" style="display:none">
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<div style="font-size:.95em;font-weight:600;color:var(--t2)">📊 플레이스 성과 현황</div>
+<button class="btn-o" onclick="refreshSpDash()" id="sp-refresh-btn">🔄 새로고침</button>
+</div>
+
+<!-- 핵심 지표 -->
+<div class="hero-grid">
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">플레이스 조회수</span><span class="hero-icon views">👁</span></div>
+<div class="hero-val" id="sp-views">2,340</div>
+<div class="hero-change up"><span class="arrow">↑</span> 12.4% 전주 대비</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">전화 연결</span><span class="hero-icon engage">📞</span></div>
+<div class="hero-val" id="sp-calls">38</div>
+<div class="hero-change up"><span class="arrow">↑</span> 8건 전주 대비</div>
+</div>
+</div>
+
+<!-- 추가 지표 -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+<div class="stat-card"><div class="stat-v">4.8</div><div class="stat-l">⭐ 평점</div></div>
+<div class="stat-card"><div class="stat-v">127</div><div class="stat-l">📝 리뷰수</div></div>
+<div class="stat-card"><div class="stat-v">92%</div><div class="stat-l">🔍 검색 유입</div></div>
+<div class="stat-card"><div class="stat-v">8%</div><div class="stat-l">📲 직접 유입</div></div>
+</div>
+
+<!-- 유입 검색어 -->
+<div class="visual-card" style="margin-bottom:16px;height:auto">
+<div class="card-header">
+<span class="card-icon">🔍</span>유입 검색어 TOP 10
+<button class="btn-o" onclick="refreshSpKeywords()" style="margin-left:auto">🔄 새로고침</button>
+</div>
+<div class="mlbl" style="margin-bottom:8px">방문자들이 어떤 검색어로 내 플레이스에 들어왔는지 확인합니다</div>
+<div style="overflow-x:auto">
+<table class="kw-rank-table">
+<thead><tr><th>#</th><th>검색어</th><th>유입수</th><th>비율</th><th>전환율</th><th>추이</th></tr></thead>
+<tbody id="sp-search-tbody"></tbody>
+</table>
+</div>
+</div>
+
+<!-- 행동 분석 (주간 트렌드) -->
+<div class="trend-card">
+<div class="trend-header">
+<div class="trend-title"><span>📈</span> 주간 행동 추이</div>
+<div class="trend-tabs" id="sp-trend-tabs">
+<button class="trend-tab a" onclick="setSpTrend('views')">조회</button>
+<button class="trend-tab" onclick="setSpTrend('calls')">전화</button>
+</div>
+</div>
+<div class="trend-chart" id="sp-trend-chart"></div>
+<div class="trend-legend">
+<div class="trend-legend-item"><div class="trend-legend-dot" style="background:#03C75A"></div>이번 주</div>
+<div class="trend-legend-item"><div class="trend-legend-dot" style="background:var(--bg4);border:1px solid var(--t3)"></div>지난 주</div>
+</div>
+</div>
+
+<!-- 전환 퍼널 -->
+<div class="visual-card" style="margin-bottom:16px;height:auto">
+<div class="card-header"><span class="card-icon">🔄</span>방문자 전환 퍼널</div>
+<div id="sp-funnel"></div>
+</div>
+</div>
+
+<!-- ===== 내 플레이스 미리보기 ===== -->
+<div id="sp-myplace">
+
+<div class="sc"><div class="sch"><div class="sct">🏪 내 업체 등록 정보</div><button class="btn-o" onclick="updatePlacePreview()">미리보기 갱신</button></div><div class="scb">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div><div class="mlbl">업체명 *</div><input class="mi" id="mp-name" placeholder="예: ○○LED미디어" value="세종미디어"></div>
+<div><div class="mlbl">업종 카테고리</div><select class="mi" id="mp-category">
+<option>LED전광판/영상장비</option><option>광고대행</option><option>이벤트/행사</option><option>인테리어</option><option>IT서비스</option><option>음식점</option><option>카페</option><option>미용/뷰티</option><option>병원/의원</option><option>학원/교육</option><option>기타</option>
+</select></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div><div class="mlbl">전화번호</div><input class="mi" id="mp-phone" placeholder="02-0000-0000" value="02-1234-5678"></div>
+<div><div class="mlbl">영업시간</div><input class="mi" id="mp-hours" placeholder="09:00 - 18:00" value="09:00 - 18:00 (주말 휴무)"></div>
+</div>
+<div class="mlbl">주소</div>
+<input class="mi" id="mp-addr" placeholder="서울특별시 강남구 ..." value="서울특별시 강남구 테헤란로 123">
+<div class="mlbl">업체 소개 (한줄)</div>
+<input class="mi" id="mp-desc" placeholder="우리 업체를 한줄로 설명해주세요" value="LED전광판 설치·렌탈 및 방송중계 전문 기업 | 10년 경력">
+<div class="mlbl">주요 서비스/메뉴 (쉼표 구분)</div>
+<input class="mi" id="mp-services" placeholder="LED전광판 설치, 전광판 렌탈, 방송중계" value="LED전광판 설치, 전광판 렌탈, 방송중계, 영상장비 대여">
+<div class="mlbl">키워드 태그 (쉼표 구분)</div>
+<input class="mi" id="mp-tags" placeholder="LED전광판, 전광판설치, 방송중계" value="LED전광판, 전광판설치, 방송중계, 옥외광고, 영상장비">
+<div class="mlbl">홈페이지 URL</div>
+<input class="mi" id="mp-url" placeholder="https://..." value="https://www.sejongmedia.co.kr">
+<div class="mlbl">대표 이미지</div>
+<div class="ig" id="mp-imgs"><div class="isl" onclick="this.querySelector('input').click()"><span style="color:var(--t3);font-size:1.4em">+</span><input type="file" accept="image/*" style="display:none" onchange="addI(this,'mp-imgs')"></div></div>
+<button class="btn-o" onclick="addIS('mp-imgs')" style="margin-top:4px">+ 이미지 추가</button>
+</div></div>
+
+<!-- 플레이스 미리보기 카드 -->
+<div style="margin-top:14px">
+<div style="font-size:.9em;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;color:var(--t2)">👀 네이버 플레이스 미리보기</div>
+
+<div id="mp-preview" style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;max-width:420px">
+<!-- 이미지 영역 -->
+<div id="mp-prev-img" style="height:180px;background:linear-gradient(135deg,var(--bg3),var(--bg4));display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:.85em;border-bottom:1px solid var(--border)">
+📷 대표 이미지 미리보기
+</div>
+
+<!-- 메인 정보 -->
+<div style="padding:16px">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+<span id="mp-prev-name" style="font-size:1.15em;font-weight:700;color:var(--t1)">세종미디어</span>
+<span style="background:#03C75A;color:#fff;padding:1px 6px;border-radius:4px;font-size:.6em;font-weight:600">플레이스</span>
+</div>
+<div id="mp-prev-cat" style="font-size:.78em;color:var(--t3);margin-bottom:10px">LED전광판/영상장비</div>
+
+<!-- 평점 -->
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+<span style="color:#FFD700;font-size:.9em">★★★★★</span>
+<span style="font-size:.85em;font-weight:600;color:var(--t1)">4.8</span>
+<span style="font-size:.78em;color:var(--t3)">방문자 리뷰 127</span>
+</div>
+
+<!-- 정보 행들 -->
+<div style="display:grid;gap:8px;font-size:.82em">
+<div style="display:flex;align-items:center;gap:8px;color:var(--t2)">
+<span style="width:20px;text-align:center;flex-shrink:0">📞</span>
+<span id="mp-prev-phone">02-1234-5678</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;color:var(--t2)">
+<span style="width:20px;text-align:center;flex-shrink:0">🕐</span>
+<span id="mp-prev-hours">09:00 - 18:00 (주말 휴무)</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;color:var(--t2)">
+<span style="width:20px;text-align:center;flex-shrink:0">📍</span>
+<span id="mp-prev-addr">서울특별시 강남구 테헤란로 123</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;color:var(--t2)">
+<span style="width:20px;text-align:center;flex-shrink:0">🌐</span>
+<span id="mp-prev-url" style="color:var(--b)">www.sejongmedia.co.kr</span>
+</div>
+</div>
+
+<!-- 소개 -->
+<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:var(--r2)">
+<div style="font-size:.72em;color:var(--t3);margin-bottom:4px">업체 소개</div>
+<div id="mp-prev-desc" style="font-size:.82em;color:var(--t2);line-height:1.5">LED전광판 설치·렌탈 및 방송중계 전문 기업 | 10년 경력</div>
+</div>
+
+<!-- 서비스/메뉴 -->
+<div style="margin-top:10px">
+<div style="font-size:.72em;color:var(--t3);margin-bottom:6px">주요 서비스</div>
+<div id="mp-prev-services" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+</div>
+
+<!-- 태그 키워드 -->
+<div style="margin-top:10px">
+<div style="font-size:.72em;color:var(--t3);margin-bottom:6px">키워드</div>
+<div id="mp-prev-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+</div>
+
+<!-- 하단 버튼 -->
+<div style="margin-top:14px;display:flex;gap:6px">
+<div style="flex:1;padding:10px;background:#03C75A;color:#fff;text-align:center;border-radius:8px;font-size:.82em;font-weight:600;cursor:default">📞 전화하기</div>
+<div style="flex:1;padding:10px;background:var(--bg4);color:var(--t2);text-align:center;border-radius:8px;font-size:.82em;border:1px solid var(--border);cursor:default">💬 톡톡 문의</div>
+</div>
+</div>
+</div>
+
+<!-- AI 진단 -->
+<div style="margin-top:12px">
+<button class="btn-p full" onclick="diagnosePlaceProfile()" id="mp-diag-btn">🤖 AI 플레이스 프로필 진단</button>
+<div id="mp-diag-result" style="display:none;margin-top:10px">
+<div class="tip-box" id="mp-diag-content"></div>
+</div>
+</div>
+</div>
+</div>
+<div id="sp-keyword" style="display:none">
+
+<div class="sc"><div class="sch"><div class="sct">🏢 내 업체 정보</div></div><div class="scb">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div><div class="mlbl">업종</div><select class="mi" id="sp-biz-type">
+<option>LED전광판/영상장비</option><option>인테리어</option><option>광고대행</option><option>이벤트/행사</option><option>IT서비스</option><option>음식점</option><option>카페</option><option>미용/뷰티</option><option>병원/의원</option><option>학원/교육</option><option>기타</option>
+</select></div>
+<div><div class="mlbl">지역</div><select class="mi" id="sp-biz-area">
+<option>서울 강남구</option><option>서울 서초구</option><option>서울 마포구</option><option>서울 송파구</option><option>서울 영등포구</option><option>서울 종로구</option><option>경기 성남시</option><option>경기 수원시</option><option>인천</option><option>부산</option><option>대전</option><option>대구</option><option>광주</option>
+</select></div>
+</div>
+<div class="mlbl">업체명</div>
+<input class="mi" id="sp-biz-name" placeholder="예: ○○미디어, ○○LED">
+<div class="mlbl">주요 서비스/상품 (쉼표 구분)</div>
+<input class="mi" id="sp-biz-service" placeholder="예: LED전광판 설치, 방송중계, 영상장비 렌탈" value="LED전광판 설치, 방송중계, 영상장비 렌탈">
+<div class="mlbl">현재 플레이스에 등록된 키워드</div>
+<input class="mi" id="sp-biz-current-kw" placeholder="예: LED전광판, 전광판설치, 방송중계">
+<div class="mlbl">특이사항 / 강점</div>
+<input class="mi" id="sp-biz-strength" placeholder="예: 10년 경력, 24시간 AS, 전국 출장">
+<button class="btn-p full" onclick="analyzeSpKeywords()" id="sp-kw-btn" style="margin-top:4px">🤖 AI 키워드 최적화 분석</button>
+</div></div>
+
+<!-- AI 분석 결과 -->
+<div id="sp-kw-results" style="display:none;margin-top:14px">
+
+<!-- 추천 키워드 -->
+<div class="visual-card" style="margin-bottom:14px;height:auto">
+<div class="card-header"><span class="card-icon">✨</span>AI 추천 키워드</div>
+<div class="mlbl" style="margin-bottom:6px">플레이스에 추가하면 노출이 향상될 키워드입니다</div>
+<div id="sp-rec-keywords"></div>
+</div>
+
+<!-- 키워드 전략 -->
+<div class="visual-card" style="margin-bottom:14px;height:auto">
+<div class="card-header"><span class="card-icon">📋</span>키워드 전략 가이드</div>
+<div id="sp-kw-strategy" style="font-size:.85em;color:var(--t2);line-height:1.7;white-space:pre-wrap"></div>
+</div>
+
+<!-- 현재 vs 추천 비교 -->
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">⚖️</span>현재 키워드 진단</div>
+<div id="sp-kw-diagnosis" style="font-size:.85em;color:var(--t2);line-height:1.7;white-space:pre-wrap"></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 지역 순위 ===== -->
+<div id="sp-ranking" style="display:none">
+
+<div class="sc"><div class="sch"><div class="sct">🔍 내 순위 확인</div></div><div class="scb">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+<div><div class="mlbl">검색 키워드</div><input class="mi" id="sp-rank-kw" placeholder="예: LED전광판 설치" style="margin-bottom:0"></div>
+<div><div class="mlbl">지역</div><select class="mi" id="sp-rank-area" style="margin-bottom:0">
+<option>서울 강남구</option><option>서울 서초구</option><option>서울 마포구</option><option>서울 송파구</option><option>서울 영등포구</option><option>경기 성남시</option><option>경기 수원시</option><option>인천</option><option>부산</option><option>대전</option>
+</select></div>
+<div><div class="mlbl">&nbsp;</div><button class="btn-p" onclick="checkSpRanking()" id="sp-rank-btn" style="width:100%;margin-bottom:0">🏆 순위 조회</button></div>
+</div>
+</div></div>
+
+<!-- 내 순위 요약 -->
+<div id="sp-rank-summary" style="margin-top:14px">
+<div class="hero-grid">
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">현재 내 순위</span><span class="hero-icon views">🏅</span></div>
+<div class="hero-val" id="sp-my-rank" style="color:var(--ac)">—</div>
+<div class="hero-sub" id="sp-my-rank-sub">키워드를 입력하고 조회하세요</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">동일 지역 업체 수</span><span class="hero-icon posts">🏢</span></div>
+<div class="hero-val" id="sp-total-biz">—</div>
+<div class="hero-sub" id="sp-total-biz-sub">같은 업종 기준</div>
+</div>
+</div>
+
+<!-- 순위 테이블 -->
+<div class="visual-card" style="margin-bottom:14px;height:auto">
+<div class="card-header"><span class="card-icon">📊</span>검색 결과 순위 (상위 10)</div>
+<div style="overflow-x:auto">
+<table class="kw-rank-table">
+<thead><tr><th>순위</th><th>업체명</th><th>평점</th><th>리뷰</th><th>강점</th></tr></thead>
+<tbody id="sp-rank-tbody"></tbody>
+</table>
+</div>
+</div>
+
+<!-- AI 분석 -->
+<div id="sp-rank-analysis-box" style="display:none">
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">💡</span>순위 개선 전략</div>
+<div id="sp-rank-analysis" style="font-size:.85em;color:var(--t2);line-height:1.7;white-space:pre-wrap"></div>
+</div>
+</div>
+
+<!-- 키워드별 순위 추적 -->
+<div class="visual-card" style="margin-top:14px;height:auto">
+<div class="card-header"><span class="card-icon">📈</span>키워드별 순위 추적</div>
+<div style="overflow-x:auto">
+<table class="kw-rank-table">
+<thead><tr><th>키워드</th><th>지역</th><th>현재 순위</th><th>변동</th><th>1달 전</th><th>목표</th></tr></thead>
+<tbody id="sp-rank-history"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ==================== OOH (옥외광고) TAB ==================== -->
+<div class="tab-c" id="ooh-tab">
+<div class="ph"><div class="pt">📋 옥외광고 가이드</div><div class="ps">야외전광판·버스·택시·지하철 등 옥외광고 종합 분석</div></div>
+<div class="sub-pills" id="ooh-pills"><button class="sub-pill a" onclick="setOohMode('find')">🔍 옥외광고 찾기</button><button class="sub-pill" onclick="setOohMode('detail')">📊 세부분석표</button></div>
+<div id="ooh-find"><div class="ooh-cards" id="ooh-grid"></div></div>
+<div id="ooh-detail" style="display:none">
+<div class="sc"><div class="sch"><div class="sct">📊 옥외광고 전체 비교</div></div><div class="scb"><div class="ts"><table class="dt"><thead><tr><th>매체</th><th>위치</th><th>예상단가</th><th>월 노출</th><th>CPM</th><th>가성비</th><th>대행사</th></tr></thead><tbody id="ooh-tbody"></tbody></table></div></div></div>
+<div class="sc"><div class="sch"><div class="sct">💡 예산별 AI 추천 조합</div></div><div class="scb">
+<div class="tip-box"><b>💡 월 500만원:</b> 강남역 지하철 스크린도어(200만) + 버스 랩핑 2대(160만) + 택시 탑라이트 10대(140만)<br>예상 월 2,800만 노출 | CPM ₩179</div>
+<div class="tip-box" style="margin-top:6px"><b>💡 월 200만원:</b> 택시 탑라이트 8대(112만) + 현수막 10개소(80만)<br>예상 월 650만 노출 | CPM ₩308</div>
+<div class="tip-box" style="margin-top:6px"><b>💡 월 100만원:</b> 택시 탑라이트 5대(70만) + 커피차 1회(30만)<br>예상 월 400만 노출 + SNS 바이럴</div>
+</div></div></div>
+<div id="ooh-detail-box" class="ooh-detail-box"></div>
+</div>
+
+<!-- ==================== DASHBOARD TAB ==================== -->
+<div class="tab-c" id="dash-tab">
+<div class="ph" style="display:flex;align-items:center;justify-content:space-between">
+<div>
+<div class="pt">📊 대시보드</div>
+<div class="ps">SNS 콘텐츠 성과를 한눈에 확인하세요</div>
+</div>
+<button class="btn-o" onclick="refreshDash()" id="dash-refresh-btn" style="display:flex;align-items:center;gap:4px">🔄 새로고침</button>
+</div>
+
+<!-- 핵심 지표 2×2 -->
+<div class="hero-grid">
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">총 조회수</span><span class="hero-icon views">👁</span></div>
+<div class="hero-val" id="hero-views-val">12,450</div>
+<div class="hero-change up" id="hero-views-change"><span class="arrow">↑</span> 15.3% 전주 대비</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">평균 노출률</span><span class="hero-icon exposure">📊</span></div>
+<div class="hero-val" id="hero-exposure-val">8.2%</div>
+<div class="hero-change up" id="hero-exposure-change"><span class="arrow">↑</span> 2.1% 전주 대비</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">총 게시물</span><span class="hero-icon posts">📄</span></div>
+<div class="hero-val" id="hero-posts-val">48</div>
+<div class="hero-sub">이번 달</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">평균 참여율</span><span class="hero-icon engage">💬</span></div>
+<div class="hero-val" id="hero-engage-val">4.7%</div>
+<div class="hero-change down" id="hero-engage-change"><span class="arrow">↓</span> 0.5% 전주 대비</div>
+</div>
+</div>
+
+<!-- 조회수 추이 (7일) -->
+<div class="trend-card">
+<div class="trend-header">
+<div class="trend-title"><span>📈</span> 조회수 추이 (7일)</div>
+<div class="trend-tabs" id="trend-tabs">
+<button class="trend-tab a" onclick="setTrendFilter('all')">전체</button>
+<button class="trend-tab" onclick="setTrendFilter('blog')">블로그</button>
+<button class="trend-tab" onclick="setTrendFilter('insta')">인스타</button>
+</div>
+</div>
+<div class="trend-chart" id="trend-chart"></div>
+<div class="trend-legend">
+<div class="trend-legend-item"><div class="trend-legend-dot" style="background:#3B82F6"></div>블로그</div>
+<div class="trend-legend-item"><div class="trend-legend-dot" style="background:var(--ac)"></div>인스타</div>
+</div>
+</div>
+
+<!-- 플랫폼별 성과 카드 -->
+<div style="margin-bottom:20px">
+<div style="font-size:1.05em;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+<span>🎯</span>플랫폼별 성과
+</div>
+<div class="platform-cards" id="platform-cards"></div>
+</div>
+
+<!-- 플랫폼 비교 -->
+<div class="visual-card" style="margin-bottom:16px">
+<div class="card-header"><span class="card-icon">📊</span>플랫폼 비교</div>
+<div id="platform-performance"></div>
+</div>
+
+<!-- 추천 키워드 & 인기 키워드 -->
+<div class="dash-grid">
+<div class="visual-card">
+<div class="card-header">
+<span class="card-icon">✨</span>AI 추천 키워드
+<button class="btn-o" onclick="getRecommendedKeywords()" style="margin-left:auto">🤖 AI 분석</button>
+</div>
+<div class="mlbl" style="margin-bottom:6px">우리 업종에 최적화된 키워드를 AI가 분석합니다</div>
+<div class="kw-grid" id="recommended-keyword-grid"></div>
+<div id="rec-kw-detail" style="display:none;margin-top:10px">
+<div class="tip-box" id="rec-kw-analysis"></div>
+</div>
+</div>
+<div class="visual-card">
+<div class="card-header">
+<span class="card-icon">🔥</span>실시간 인기 키워드
+<button class="btn-o" onclick="getPopularKeywords()" style="margin-left:auto">🔄 새로고침</button>
+</div>
+<div class="mlbl" style="margin-bottom:6px">업계 관련 실시간 검색 트렌드</div>
+<div class="kw-grid" id="popular-keyword-grid"></div>
+<div id="pop-kw-detail" style="display:none;margin-top:10px">
+<div class="tip-box" id="pop-kw-analysis"></div>
+</div>
+</div>
+</div>
+
+<!-- AI 인사이트 -->
+<div class="insight-box">
+<div class="insight-title"><span class="card-icon">💡</span>AI 인사이트</div>
+<div class="insight-text" id="ai-insight">분석 중...</div>
+<button class="btn-p" onclick="analyzeAll()" style="margin-top:12px">🤖 전체 분석 실행</button>
+</div>
+
+<!-- 강점 & 약점 -->
+<div class="dash-grid">
+<div class="visual-card">
+<div class="card-header"><span class="card-icon">💪</span>강점</div>
+<div class="strength-grid" id="strength-list"></div>
+</div>
+<div class="visual-card">
+<div class="card-header"><span class="card-icon">⚠️</span>개선 포인트</div>
+<div class="strength-grid" id="weakness-list"></div>
+<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+<span style="font-size:.85em;font-weight:600;color:var(--t2)">📚 비슷한 글 레퍼런스</span>
+<button class="btn-o" onclick="getReferences()" id="ref-btn">🔍 레퍼런스 찾기</button>
+</div>
+<div class="mlbl">개선하고 싶은 주제나 키워드를 입력하면 참고할 만한 콘텐츠 구조와 전략을 AI가 제안합니다</div>
+<div style="display:flex;gap:6px;margin-top:6px">
+<input class="mi" id="ref-keyword" placeholder="예: LED전광판 시공사례, 옥외광고 성과" style="margin-bottom:0;flex:1">
+<select class="mi" id="ref-platform" style="margin-bottom:0;width:120px">
+<option value="blog">블로그</option>
+<option value="insta">인스타그램</option>
+<option value="fb">페이스북</option>
+<option value="all">전체</option>
+</select>
+</div>
+<div id="ref-results" style="display:none;margin-top:10px">
+<div id="ref-content"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 내 콘텐츠 키워드 분석 -->
+<div class="visual-card">
+<div class="card-header">
+<span class="card-icon">🏷️</span>
+내 콘텐츠 키워드 분석
+<button class="btn-o" onclick="getKeywords()" style="margin-left:auto">✨ AI 키워드 재생성</button>
+</div>
+<div class="kw-grid" id="keyword-grid"></div>
+</div>
+
+<!-- 내 글 키워드 순위 추적 -->
+<div class="visual-card">
+<div class="card-header">
+<span class="card-icon">🏅</span>
+내 글 키워드 순위
+<div style="margin-left:auto;display:flex;gap:4px">
+<button class="btn-o" onclick="checkMyRanking()">🔍 순위 조회</button>
+<button class="btn-o" onclick="addTrackKeyword()">+ 키워드 추가</button>
+</div>
+</div>
+<div class="mlbl" style="margin-bottom:6px">작성한 글의 키워드가 검색에서 몇 위에 노출되는지 추적합니다</div>
+<div style="display:flex;gap:6px;margin-bottom:10px">
+<input class="mi" id="rank-kw-input" placeholder="추적할 키워드 입력 (예: LED전광판 시공)" style="margin-bottom:0;flex:1">
+<select class="mi" id="rank-platform" style="margin-bottom:0;width:110px">
+<option value="naver">네이버</option>
+<option value="insta">인스타</option>
+<option value="google">구글</option>
+</select>
+</div>
+<div style="overflow-x:auto">
+<table class="kw-rank-table">
+<thead><tr><th>키워드</th><th>플랫폼</th><th>현재 순위</th><th>변동</th><th>최고 순위</th><th>노출 글</th></tr></thead>
+<tbody id="rank-tbody"></tbody>
+</table>
+</div>
+<div id="rank-detail" style="display:none;margin-top:10px">
+<div class="tip-box" id="rank-analysis"></div>
+</div>
+</div>
+
+<!-- 경쟁사 비교 -->
+<div class="visual-card">
+<div class="card-header"><span class="card-icon">🏆</span>경쟁사 대비 성과</div>
+<div id="competitor-compare"></div>
+</div>
+
+</div>
+
+<!-- ==================== KEYWORD RESEARCH TAB ==================== -->
+<div class="tab-c" id="kwresearch-tab">
+<div class="ph"><div class="pt">🔍 키워드 분석</div><div class="ps">키워드를 검색하면 검색량·트렌드·관련 콘텐츠를 한눈에 확인합니다</div></div>
+
+<!-- 검색 바 -->
+<div class="sc"><div class="scb" style="padding:12px 14px">
+<div style="display:flex;gap:6px">
+<input class="mi" id="kwr-input" placeholder="분석할 키워드를 입력하세요 (예: LED전광판 설치)" style="margin-bottom:0;flex:1;font-size:.95em" onkeydown="if(event.key==='Enter')searchKeyword()">
+<button class="btn-p" onclick="searchKeyword()" id="kwr-btn" style="flex-shrink:0;padding:8px 24px">🔍 분석</button>
+</div>
+<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap" id="kwr-recent">
+<span style="font-size:.82em;color:var(--t3);margin-right:4px">최근:</span>
+</div>
+</div></div>
+
+<!-- 빈 상태 -->
+<div id="kwr-empty" style="text-align:center;padding:50px 20px;color:var(--t3)">
+<div style="font-size:3em;margin-bottom:12px">🔍</div>
+<div style="font-size:1em;margin-bottom:6px">키워드를 입력하고 분석을 시작하세요</div>
+<div style="font-size:.88em">검색량, 트렌드, 관련 기사·블로그·SNS 콘텐츠를 AI가 분석합니다</div>
+</div>
+
+<!-- 결과 영역 -->
+<div id="kwr-results" style="display:none">
+
+<!-- 검색량 지표 -->
+<div class="hero-grid" style="grid-template-columns:repeat(4,1fr)">
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">월간 검색량</span><span class="hero-icon views">📊</span></div>
+<div class="hero-val" id="kwr-volume">—</div>
+<div class="hero-sub" id="kwr-volume-sub">네이버+구글 합산</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">경쟁 강도</span><span class="hero-icon engage">⚔️</span></div>
+<div class="hero-val" id="kwr-competition">—</div>
+<div class="hero-sub" id="kwr-comp-sub">높을수록 경쟁 치열</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">콘텐츠 수</span><span class="hero-icon posts">📄</span></div>
+<div class="hero-val" id="kwr-content-count">—</div>
+<div class="hero-sub">블로그+기사+SNS</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">트렌드</span><span class="hero-icon exposure">📈</span></div>
+<div class="hero-val" id="kwr-trend">—</div>
+<div class="hero-sub" id="kwr-trend-sub">최근 3개월</div>
+</div>
+</div>
+
+<!-- 검색량 추이 차트 -->
+<div class="trend-card" style="margin-bottom:14px">
+<div class="trend-header">
+<div class="trend-title"><span>📈</span> 월별 검색량 추이 (12개월)</div>
+</div>
+<div class="trend-chart" id="kwr-chart" style="height:160px"></div>
+<div class="trend-legend">
+<div class="trend-legend-item"><div class="trend-legend-dot" style="background:var(--ac)"></div>네이버</div>
+<div class="trend-legend-item"><div class="trend-legend-dot" style="background:var(--b)"></div>구글</div>
+</div>
+</div>
+
+<!-- 플랫폼별 탭 -->
+<div class="sub-pills" id="kwr-plat-pills">
+<button class="sub-pill a" onclick="setKwrPlat('all')">📋 전체</button>
+<button class="sub-pill" onclick="setKwrPlat('news')">📰 기사·뉴스</button>
+<button class="sub-pill" onclick="setKwrPlat('blog')">📝 블로그</button>
+<button class="sub-pill" onclick="setKwrPlat('sns')">📱 SNS</button>
+</div>
+
+<!-- 콘텐츠 리스트 -->
+<div class="visual-card" style="height:auto;margin-bottom:14px">
+<div class="card-header">
+<span class="card-icon">📑</span>관련 콘텐츠 (<span id="kwr-list-count">0</span>건)
+<span id="kwr-searched-kw" style="margin-left:6px;font-size:.82em;color:var(--ac);font-weight:400"></span>
+</div>
+<div id="kwr-content-list"></div>
+</div>
+
+<!-- 연관 키워드 -->
+<div class="dash-grid">
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">🔗</span>연관 키워드</div>
+<div id="kwr-related" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+</div>
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">💡</span>AI 키워드 인사이트
+<button class="btn-o" onclick="saveKw($('kwr-input').value)" style="margin-left:auto">⭐ 키워드 저장</button>
+</div>
+<div id="kwr-insight" style="font-size:.88em;color:var(--t2);line-height:1.7;white-space:pre-wrap"></div>
+</div>
+</div>
+
+<!-- 키워드 저장 -->
+<div class="visual-card" style="margin-top:14px;height:auto">
+<div class="card-header">
+<span class="card-icon">⭐</span>저장된 키워드 (<span id="kwr-saved-count">0</span>개)
+<button class="btn-o" onclick="clearSavedKw()" style="margin-left:auto">🗑️ 초기화</button>
+</div>
+<div id="kwr-saved-list"></div>
+</div>
+
+</div>
+</div>
+
+<!-- ==================== COMPARE TAB ==================== -->
+<div class="tab-c" id="compare-tab">
+<div class="ph"><div class="pt">⚖️ 비교 분석</div><div class="ps">내 콘텐츠 vs 경쟁사 — AI가 분석</div></div>
+<div class="sub-pills" id="cmp-pills">
+<button class="sub-pill a" onclick="setCmpMode('dashboard')">📊 비교 대시보드</button>
+<button class="sub-pill" onclick="setCmpMode('text')">📝 글 비교</button>
+<button class="sub-pill" onclick="setCmpMode('url')">🔗 URL 비교</button>
+</div>
+
+<!-- 비교 대시보드 -->
+<div id="cmp-dashboard">
+
+<!-- 내 콘텐츠 vs 경쟁사 요약 -->
+<div class="hero-grid">
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">내 콘텐츠 점수</span><span class="hero-icon views">📝</span></div>
+<div class="hero-val" id="cmp-my-score" style="color:var(--g)">—</div>
+<div class="hero-sub">AI 종합 평가</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">경쟁사 평균 점수</span><span class="hero-icon engage">🏢</span></div>
+<div class="hero-val" id="cmp-comp-score" style="color:var(--b)">—</div>
+<div class="hero-sub">업계 평균 기준</div>
+</div>
+</div>
+
+<!-- 항목별 비교 바 -->
+<div class="visual-card" style="margin-bottom:14px;height:auto">
+<div class="card-header">
+<span class="card-icon">📊</span>항목별 비교
+<button class="btn-o" onclick="runCmpDashboard()" style="margin-left:auto">🤖 AI 비교 분석</button>
+</div>
+<div class="mlbl" style="margin-bottom:10px">내 콘텐츠와 경쟁사의 항목별 점수를 비교합니다. 글을 입력하고 분석을 실행하세요.</div>
+<div id="cmp-bars"></div>
+</div>
+
+<!-- 비교 결과 상세 -->
+<div class="dash-grid">
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">💪</span>우세 항목</div>
+<div id="cmp-strengths" style="font-size:.88em;color:var(--t2);line-height:1.7"><span style="color:var(--t3)">분석 실행 후 표시됩니다</span></div>
+</div>
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">⚠️</span>개선 필요 항목</div>
+<div id="cmp-weaknesses" style="font-size:.88em;color:var(--t2);line-height:1.7"><span style="color:var(--t3)">분석 실행 후 표시됩니다</span></div>
+</div>
+</div>
+
+<!-- AI 전략 제안 -->
+<div class="visual-card" style="margin-top:14px;height:auto">
+<div class="card-header"><span class="card-icon">💡</span>AI 경쟁 전략 제안</div>
+<div id="cmp-strategy" style="font-size:.88em;color:var(--t2);line-height:1.7;white-space:pre-wrap"><span style="color:var(--t3)">분석 실행 후 표시됩니다</span></div>
+</div>
+
+<!-- 비교 이력 -->
+<div class="visual-card" style="margin-top:14px;height:auto">
+<div class="card-header">
+<span class="card-icon">📚</span>비교 이력 (<span id="cmp-history-count">0</span>건)
+<button class="btn-o" onclick="clearCmpHistory()" style="margin-left:auto">🗑️ 초기화</button>
+</div>
+<div id="cmp-history-list"><div style="text-align:center;padding:12px;color:var(--t3);font-size:.88em">비교 이력이 없습니다</div></div>
+</div>
+
+</div>
+
+<!-- 글 비교 -->
+<div id="cmp-text" style="display:none">
+<div class="sc"><div class="sch"><div class="sct">비교할 글</div></div><div class="scb">
+<div class="cmp-vs"><div><div class="mlbl">내 글</div><textarea class="mi" id="cmp-a" style="min-height:120px" placeholder="내 글 붙여넣기..."></textarea></div><div class="cmp-mid">VS</div><div><div class="mlbl">경쟁사 글</div><textarea class="mi" id="cmp-b" style="min-height:120px" placeholder="경쟁사 글..."></textarea></div></div>
+<button class="btn-p full" onclick="doCompare()" id="cmp-btn" style="margin-top:10px">AI 비교 분석 실행</button>
+</div></div>
+<div class="ra" id="cmp-ra"><div class="sc"><div class="sch"><div class="sct">🤖 분석 결과</div></div><div class="scb"><div class="rc" id="cmp-rc" style="max-height:400px"></div></div></div></div>
+</div>
+
+<!-- URL 비교 -->
+<div id="cmp-url" style="display:none">
+<div class="sc"><div class="sch"><div class="sct">URL 비교</div></div><div class="scb">
+<div class="cmp-vs"><div><div class="mlbl">내 글 URL</div><input class="mi" id="cmp-url-a" placeholder="https://blog.naver.com/..."><div class="mlbl">내용 붙여넣기</div><textarea class="mi" id="cmp-url-at" style="min-height:80px" placeholder="글 내용 붙여넣기..."></textarea></div><div class="cmp-mid">VS</div><div><div class="mlbl">경쟁사 URL</div><input class="mi" id="cmp-url-b" placeholder="https://..."><div class="mlbl">내용 붙여넣기</div><textarea class="mi" id="cmp-url-bt" style="min-height:80px" placeholder="글 내용 붙여넣기..."></textarea></div></div>
+<button class="btn-p full" onclick="doCompare()" style="margin-top:10px">AI 비교 분석 실행</button>
+</div></div>
+<div class="ra" id="cmp-ra2"><div class="sc"><div class="sch"><div class="sct">🤖 분석 결과</div></div><div class="scb"><div class="rc" id="cmp-rc2" style="max-height:400px"></div></div></div></div>
+</div>
+
+</div>
+
+<!-- ==================== AD SIMULATOR TAB ==================== -->
+<div class="tab-c" id="adsim-tab">
+<div class="ph"><div class="pt">📢 광고 시뮬레이터</div><div class="ps">플랫폼별 예산·타겟·지역 설정 및 ROI 예측</div></div>
+<div class="sc"><div class="sch"><div class="sct">⚙️ 광고 설정</div></div><div class="scb">
+<div class="mlbl">광고명</div><input class="mi" id="ad-name" placeholder="예: 2024 LED 시공사례 캠페인" value="방송중계 서비스 홍보">
+<div class="mlbl">플랫폼</div>
+<div class="ad-plats" id="ad-plats"><button class="ad-plat a" onclick="setAdPlat(this,'naver')">네이버</button><button class="ad-plat" onclick="setAdPlat(this,'insta')">인스타</button><button class="ad-plat" onclick="setAdPlat(this,'fb')">페이스북</button><button class="ad-plat" onclick="setAdPlat(this,'gdn')">GDN</button></div>
+<div class="mlbl">월 예산: <span id="ad-budget-v">₩1,000,000</span></div>
+<input type="range" id="ad-sl" min="100000" max="10000000" step="100000" value="1000000" oninput="updateAd()" style="width:100%;accent-color:var(--ac)">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+<div><div class="mlbl">타겟 연령</div><select class="mi" id="ad-age" onchange="updateAd()"><option>전체</option><option>20~30대</option><option>30~40대</option><option>40~50대</option><option>50대 이상</option></select></div>
+<div><div class="mlbl">타겟 성별</div><select class="mi" id="ad-gender" onchange="updateAd()"><option>전체</option><option>남성</option><option>여성</option></select></div>
+<div><div class="mlbl">타겟 지역</div><select class="mi" id="ad-region" onchange="updateAd()"><option>전국</option><option>서울</option><option>경기/인천</option><option>부산/울산</option><option>대전/충남</option><option>대구/경북</option><option>광주/전남</option></select></div>
+<div><div class="mlbl">캠페인 기간</div><select class="mi" id="ad-period" onchange="updateAd()"><option value="1">1개월</option><option value="3" selected>3개월</option><option value="6">6개월</option><option value="12">12개월</option></select></div>
+</div>
+<div class="mlbl" style="margin-top:8px">커스텀 키워드</div><input class="mi" id="ad-kw" placeholder="타겟 키워드 (쉼표 구분)" value="방송중계, LED설치, 전광판렌탈">
+</div></div>
+<div class="stat-grid" id="ad-stats" style="margin-bottom:14px"></div>
+<div class="sc"><div class="sch"><div class="sct">💰 예상 비용 상세</div></div><div class="scb" id="ad-cost-detail"></div></div>
+<div class="sc"><div class="sch"><div class="sct">📊 예상 CRM 퍼널</div></div><div class="scb" id="ad-crm"></div></div>
+
+<!-- AI 광고 추천 -->
+<div class="sc"><div class="sch"><div class="sct">🤖 AI 맞춤 광고 추천</div><button class="btn-o" onclick="getAdRecommend()">✨ 추천받기</button></div><div class="scb">
+<div class="mlbl" style="margin-bottom:6px">업종·예산·타겟에 맞는 최적의 광고 전략을 AI가 추천합니다</div>
+<div id="ad-rec-result">
+<div style="display:grid;gap:8px" id="ad-rec-cards"></div>
+</div>
+</div></div>
+
+<div class="tip-box"><b>💡 AI:</b> 예산 50% 네이버, 30% 인스타 릴스, 20% 리타겟팅 배분 시 최적 ROI.</div>
+</div>
+
+<!-- ==================== STYLE TAB ==================== -->
+<div class="tab-c" id="style-tab">
+<div class="ph"><div class="pt">🎨 문체 학습</div><div class="ps">기존 글에서 문체를 학습하여 AI 생성에 반영</div></div>
+<div class="sub-pills" id="style-pills">
+<button class="sub-pill a" onclick="setStyleMode('dashboard')">📊 분석 대시보드</button>
+<button class="sub-pill" onclick="setStyleMode('paste')">📝 글 붙여넣기</button>
+<button class="sub-pill" onclick="setStyleMode('url')">🔗 URL 입력</button>
+<button class="sub-pill" onclick="setStyleMode('compare')">⚖️ 글 비교</button>
+</div>
+
+<!-- 분석 대시보드 -->
+<div id="style-dashboard">
+<div id="style-dash-empty" style="text-align:center;padding:40px 20px;color:var(--t3)">
+<div style="font-size:2.5em;margin-bottom:10px">📝</div>
+<div style="font-size:.95em;margin-bottom:6px">아직 학습된 글이 없습니다</div>
+<div style="font-size:.85em">글을 붙여넣기하고 분석하면 문체 대시보드가 생성됩니다</div>
+</div>
+<div id="style-dash-content" style="display:none">
+
+<!-- 문체 지표 카드 -->
+<div class="hero-grid" id="style-metrics"></div>
+
+<!-- 문체 레이더 시각화 -->
+<div class="dash-grid">
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">📊</span>문체 지표 상세</div>
+<div id="style-bars"></div>
+</div>
+<div class="visual-card" style="height:auto">
+<div class="card-header"><span class="card-icon">💡</span>문체 특징 요약</div>
+<div id="style-summary" style="font-size:.88em;color:var(--t2);line-height:1.7;white-space:pre-wrap"></div>
+</div>
+</div>
+
+<!-- 저장된 글 목록 -->
+<div class="visual-card" style="height:auto;margin-top:14px">
+<div class="card-header">
+<span class="card-icon">📚</span>학습된 글 목록 (<span id="style-count">0</span>개)
+<button class="btn-o" onclick="clearStyleTexts()" style="margin-left:auto">🗑️ 전체 삭제</button>
+</div>
+<div id="style-saved-list"></div>
+</div>
+</div>
+</div>
+
+<!-- 글 붙여넣기 -->
+<div id="style-paste" style="display:none">
+<div class="sc"><div class="sch"><div class="sct">기존 글 붙여넣기</div></div><div class="scb">
+<div class="mlbl">글 제목 (선택)</div>
+<input class="mi" id="style-title" placeholder="예: 코엑스 LED 설치 후기">
+<textarea class="mi" id="style-ta" style="min-height:140px" placeholder="평소 작성하는 블로그 글이나 SNS 글을 붙여넣기..."></textarea>
+<button class="btn-p full" onclick="learnStyle('paste')" id="style-btn">🤖 문체 학습 & 저장</button>
+</div></div></div>
+<div id="style-url" style="display:none">
+<div class="sc"><div class="sch"><div class="sct">URL로 학습</div></div><div class="scb">
+<div class="mlbl">블로그/SNS URL</div><input class="mi" id="style-url-in" placeholder="https://blog.naver.com/...">
+<div class="mlbl">글 내용 (URL에서 복사)</div><textarea class="mi" id="style-url-content" style="min-height:100px" placeholder="URL의 글 내용을 붙여넣어주세요..."></textarea>
+<button class="btn-p full" onclick="learnStyle('url')">🤖 URL 글 학습 & 저장</button>
+</div></div></div>
+<div id="style-compare" style="display:none">
+<div class="sc"><div class="sch"><div class="sct">⚖️ 글 비교 분석</div></div><div class="scb">
+<div class="cmp-vs"><div><div class="mlbl">글 A</div><textarea class="mi" id="style-cmp-a" style="min-height:100px" placeholder="첫 번째 글..."></textarea></div><div class="cmp-mid">VS</div><div><div class="mlbl">글 B</div><textarea class="mi" id="style-cmp-b" style="min-height:100px" placeholder="두 번째 글..."></textarea></div></div>
+<button class="btn-p full" onclick="compareStyles()">문체 비교 분석</button>
+</div></div></div>
+<div class="ra" id="style-ra"><div class="sc"><div class="sch"><div class="sct">🎨 학습 결과</div></div><div class="scb"><div class="rc" id="style-rc"></div></div></div></div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<div class="modal" id="m-api"><div class="modal-c">
+<div class="modal-t">🔑 API 키 설정</div>
+<input class="mi" id="api-in" type="password" placeholder="sk-ant-...">
+<div class="md"><a href="https://console.anthropic.com/" target="_blank" style="color:var(--ac)">console.anthropic.com</a>에서 발급</div>
+<div class="bg" style="margin-top:10px"><button class="btn-p" onclick="saveKey()">저장</button><button class="btn-o" onclick="closeM('m-api')">닫기</button></div>
+<div id="api-cost-est" style="margin-top:10px;font-size:.75em;color:var(--t2)"></div>
+</div></div>
+<div class="modal" id="m-myinfo"><div class="modal-c">
+<div class="modal-t">👤 내 정보</div>
+<div class="mlbl">블로그 URL</div><input class="mi" id="info-blog" placeholder="https://blog.naver.com/...">
+<div class="mlbl">인스타그램</div><input class="mi" id="info-insta" placeholder="@계정명">
+<div class="mlbl">페이스북</div><input class="mi" id="info-fb" placeholder="https://facebook.com/...">
+<div class="mlbl">홈페이지</div><input class="mi" id="info-hp" placeholder="https://...">
+<div class="mlbl">스마트플레이스</div><input class="mi" id="info-sp" placeholder="https://naver.me/...">
+<div class="bg" style="margin-top:10px"><button class="btn-p" onclick="saveInfo()">저장</button><button class="btn-o" onclick="closeM('m-myinfo')">닫기</button></div>
+</div></div>
+
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const LS=(k,v)=>{if(v!==undefined){localStorage.setItem(k,JSON.stringify(v));return v}try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
+
+// === TABS ===
+const tabs=['blog','insta','fb','sp','ooh','dash','kwresearch','compare','adsim','style'];
+const tabN={blog:'블로그',insta:'인스타',fb:'페이스북',sp:'플레이스',ooh:'옥외광고',dash:'대시보드',kwresearch:'키워드',compare:'비교',adsim:'광고',style:'문체'};
+function go(t){tabs.forEach(x=>{const el=$(x+'-tab');if(el){el.classList.remove('a');if(x===t)el.classList.add('a')}});
+document.querySelectorAll('.nav-i[data-t]').forEach(b=>{b.classList.remove('a');if(b.dataset.t===t)b.classList.add('a')});
+document.querySelectorAll('.mnav button').forEach(b=>{b.classList.remove('a');if(b.dataset.t===t)b.classList.add('a')});
+if(t==='adsim')updateAd();if(t==='style')renderStyleDash();if(t==='compare')renderCmpHistory();}
+function initMnav(){$('mnav').innerHTML=tabs.map(t=>'<button data-t="'+t+'" '+(t==='blog'?'class="a"':'')+' onclick="go(\''+t+'\')">'+tabN[t]+'</button>').join('')}
+
+// === STEPS ===
+function setSt(pre,n,total){for(let i=0;i<total;i++){const s=document.querySelectorAll('#'+pre+'-steps .step')[i];const c=$(pre.charAt(0)+'s'+i);if(!s||!c)continue;s.classList.remove('a','done');c.classList.remove('a');if(i<n)s.classList.add('done');if(i===n){s.classList.add('a');c.classList.add('a')}}}
+function bst(n){setSt('blog',n,5);
+if(n===3){syncEditorToTextarea();$('blog-final').textContent=getEditorText()}
+if(n===4){renderBlogPreview()}}
+
+// === 리치 에디터 시스템 ===
+// 에디터 ↔ textarea 동기화
+function syncEditorToTextarea(){
+const editor=$('blog-editor');
+$('blog-edit-ta').value=getEditorText();
+}
+function getEditorText(){
+const editor=$('blog-editor');
+let text='';
+editor.childNodes.forEach(node=>{
+if(node.nodeType===3){text+=node.textContent;}
+else if(node.tagName==='BR'){text+='\n';}
+else if(node.tagName==='IMG'){text+='\n[📷 이미지]\n';}
+else if(node.tagName==='DIV'||node.tagName==='P'){
+if(node.querySelector('img')){text+='\n[📷 이미지]\n';}
+else{text+='\n'+node.textContent;}
+}else{text+=node.textContent;}
+});
+return text.trim();
+}
+
+// A/B안 선택 시 에디터에 로드
+function loadToEditor(text){
+const editor=$('blog-editor');
+const lines=text.split('\n');
+editor.innerHTML=lines.map(line=>{
+if(!line.trim())return '<p><br></p>';
+return '<p>'+line.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</p>';
+}).join('');
+}
+
+// 이미지 삽입
+function editorInsertImage(){
+$('blog-inline-file').click();
+}
+function handleEditorImg(input){
+const file=input.files[0];
+if(!file)return;
+const reader=new FileReader();
+reader.onload=function(e){
+const editor=$('blog-editor');
+editor.focus();
+const img=document.createElement('img');
+img.src=e.target.result;
+img.style.maxWidth='100%';
+img.style.borderRadius='6px';
+img.style.margin='10px 0';
+img.style.display='block';
+img.onclick=function(){
+document.querySelectorAll('#blog-editor img').forEach(i=>i.classList.remove('selected'));
+this.classList.toggle('selected');
+};
+// 커서 위치에 삽입
+const sel=window.getSelection();
+if(sel.rangeCount>0&&editor.contains(sel.anchorNode)){
+const range=sel.getRangeAt(0);
+range.collapse(false);
+const wrapper=document.createElement('div');
+wrapper.appendChild(img);
+wrapper.appendChild(document.createElement('br'));
+range.insertNode(wrapper);
+range.setStartAfter(wrapper);
+range.collapse(true);
+sel.removeAllRanges();
+sel.addRange(range);
+}else{
+const wrapper=document.createElement('div');
+wrapper.appendChild(img);
+wrapper.appendChild(document.createElement('br'));
+editor.appendChild(wrapper);
+}
+toast('📷 이미지 삽입됨');
+};
+reader.readAsDataURL(file);
+input.value='';
+}
+
+// 태그 삽입
+function editorInsertTag(){
+const editor=$('blog-editor');
+editor.focus();
+const tag=document.createElement('p');
+tag.textContent='#방송중계 #LED시스템';
+tag.style.color='#03C75A';
+editor.appendChild(tag);
+}
+
+// Delete키로 선택된 이미지 삭제
+document.addEventListener('keydown',function(e){
+if(e.key==='Delete'||e.key==='Backspace'){
+const sel=document.querySelector('#blog-editor img.selected');
+if(sel){e.preventDefault();sel.parentElement.tagName==='DIV'?sel.parentElement.remove():sel.remove();toast('🗑️ 이미지 삭제됨');}
+}
+});
+
+// 미리보기 렌더
+function renderBlogPreview(){
+const editor=$('blog-editor');
+const raw=getEditorText();
+if(!raw){$('blog-preview-card').innerHTML='<div style="padding:40px;text-align:center;color:#aaa">글 내용이 없습니다. 먼저 글을 생성해주세요.</div>';return}
+
+// 에디터 HTML에서 직접 미리보기 생성
+let previewBody='';
+editor.childNodes.forEach(node=>{
+if(node.nodeType===3&&node.textContent.trim()){
+previewBody+='<p>'+node.textContent+'</p>';
+}else if(node.tagName==='IMG'){
+previewBody+='<div style="margin:16px 0"><img src="'+node.src+'" style="width:100%;border-radius:6px;display:block"></div>';
+}else if(node.tagName==='DIV'||node.tagName==='P'){
+const img=node.querySelector('img');
+if(img){
+previewBody+='<div style="margin:16px 0"><img src="'+img.src+'" style="width:100%;border-radius:6px;display:block"></div>';
+}else{
+const txt=node.textContent.trim();
+if(!txt)return;
+if(txt.match(/^#\S/))return;
+if(txt.match(/^[■◆▶●【]/)||txt.match(/^\d+[\.\)]/)){
+const clean=txt.replace(/^[■◆▶●]+\s*/,'').replace(/^【|】$/g,'');
+previewBody+='<p style="font-weight:700;font-size:1.05em;color:#222;margin-top:18px;margin-bottom:8px;border-left:3px solid #03C75A;padding-left:10px">'+clean+'</p>';
+}else{
+previewBody+='<p>'+txt+'</p>';
+}
+}
+}
+});
+
+// 제목 = 첫 텍스트 노드
+const lines=raw.split('\n').filter(l=>l.trim()&&!l.match(/^\[📷/));
+let title=(lines[0]||'제목 없음').replace(/^[\[【\(]?제목[\]】\)]?\s*[:：]?\s*/,'').replace(/^#\s*/,'').trim();
+const tags=raw.match(/#[^\s#]+/g)||[];
+const tagsHTML=tags.map(t=>'<span class="bp-tag">'+t+'</span>').join(' ');
+
+const coverImg=document.querySelector('#blog-imgs .isl.filled img');
+let coverHTML=coverImg?'<div style="max-height:300px;overflow:hidden"><img src="'+coverImg.src+'" style="width:100%;display:block"></div>':'';
+
+const today=new Date();
+const dateStr=today.getFullYear()+'.'+(today.getMonth()+1)+'.'+today.getDate()+'. '+today.getHours()+':'+String(today.getMinutes()).padStart(2,'0');
+const blogName=$('info-blog').value?$('info-blog').value.split('/').pop()||'내 블로그':'내 블로그';
+
+$('blog-preview-card').innerHTML=`
+${coverHTML}
+<div class="bp-header"><div class="bp-profile"><div class="bp-avatar">N</div><div><div class="bp-author">${blogName}</div><div class="bp-date">${dateStr}</div></div></div></div>
+<div class="bp-title">${title}</div>
+<div class="bp-body">${previewBody}</div>
+${tags.length?'<div class="bp-tags">'+tagsHTML+'</div>':''}
+<div class="bp-footer"><span>❤️ 좋아요 0</span><span>💬 댓글 0</span><span>🔗 공유</span><span>📌 저장</span></div>`;
+}
+function ist(n){setSt('insta',n,3)}
+function fst(n){setSt('fb',n,3)}
+
+// === API ===
+let apiKey=localStorage.getItem('anthropic_api_key')||'';
+let totalCredits=parseFloat(localStorage.getItem('total_credits')||'0');
+function updCredit(id,cost){totalCredits+=cost;localStorage.setItem('total_credits',totalCredits.toFixed(4));const e1=$(id+'-credit'),e2=$(id+'-credit-total');if(e1)e1.textContent='$'+cost.toFixed(4);if(e2)e2.textContent='$'+totalCredits.toFixed(4)}
+function showM(id){$(id).classList.add('show');if(id==='m-api'){$('api-in').value=apiKey;updateApiCostEst()}if(id==='m-myinfo'){const info=LS('myinfo')||{};$('info-blog').value=info.blog||'';$('info-insta').value=info.insta||'';$('info-fb').value=info.fb||'';$('info-hp').value=info.hp||'';$('info-sp').value=info.sp||''}}
+function closeM(id){$(id).classList.remove('show')}
+function saveKey(){const k=$('api-in').value.trim();if(k){apiKey=k;localStorage.setItem('anthropic_api_key',k);toast('✅ 저장됨');closeM('m-api')}else toast('⚠️ 입력')}
+function saveInfo(){const info={blog:$('info-blog').value.trim(),insta:$('info-insta').value.trim(),fb:$('info-fb').value.trim(),hp:$('info-hp').value.trim(),sp:$('info-sp').value.trim()};LS('myinfo',info);toast('✅ 내 정보 저장됨');closeM('m-myinfo')}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
+function updateApiCostEst(){$('api-cost-est').innerHTML='<b>예상 비용:</b> A/B 1회 생성 ≈ $0.01 | 월 100회 ≈ $1.00<br>누적 사용: <b style="color:var(--ac)">$'+totalCredits.toFixed(4)+'</b>'}
+
+// === AI CALL ===
+async function callAI(prompt,img64){if(!apiKey){toast('⚠️ API 키 설정');showM('m-api');return null}
+const content=[];if(img64)content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:img64}});content.push({type:'text',text:prompt});
+const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content}]})});
+const d=await r.json();if(d.content&&d.content[0])return d.content[0].text;if(d.error)throw new Error(d.error.message);throw new Error('응답 오류')}
+function getStyleHint(){const p=LS('style_profile');return p?'\n\n[작성자 문체]\n'+p+'\n이 문체를 반영하여 작성.':''}
+
+// === A/B GENERATION ===
+async function genBlog(){const btn=$('blog-gen-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>A/B안 생성 중...';
+const ra=$('blog-ra');ra.classList.add('show');$('blog-rc-a').textContent='A안 생성 중...';$('blog-rc-b').textContent='B안 대기...';$('blog-ab-diff').textContent='';
+try{let img64=null;const fi=document.querySelector('#blog-imgs .isl.filled img');if(fi)img64=fi.src.split(',')[1];
+const base='방송중계·LED시스템 전문 기업 블로그.\n목적: '+$('b-purpose').value+'\n행사: '+($('b-event').value||'(미입력)')+'\n내용: '+($('b-detail').value||'(미입력)')+'\n강조: '+($('b-highlight').value||'(미입력)')+'\nSEO제목, 서론, 본문3-4단락([📷 이미지 N]태그), 결론, 해시태그7-10개'+getStyleHint();
+let cost=0;
+const a=await callAI(base+'\n\n[A안: 전문적·신뢰감 있는 톤. 데이터와 수치 중심. 업계 전문용어 활용.]',img64);
+$('blog-rc-a').textContent=a||'';cost+=0.004;$('blog-rc-b').textContent='B안 생성 중...';
+const b=await callAI(base+'\n\n[B안: 친근하고 생동감 있는 톤. 스토리텔링과 현장감 중심. 공감 유도.]',img64);
+$('blog-rc-b').textContent=b||'';cost+=0.004;$('blog-ab-diff').textContent='비교 분석 중...';
+const diff=await callAI('두 블로그 글 비교 분석:\n\n[A안]\n'+(a||'').substring(0,600)+'\n\n[B안]\n'+(b||'').substring(0,600)+'\n\n아래 형식으로 비교:\n1) SEO 효과 - 어느 안이 더 높은지\n2) 가독성 - 어느 쪽이 읽기 쉬운지\n3) 참여 유도력 - 댓글/공유 유도\n4) 최종 추천 - A or B와 이유\n5줄 이내.');
+$('blog-ab-diff').textContent=diff||'';cost+=0.002;updCredit('blog',cost);toast('✅ A/B 완료');
+}catch(e){$('blog-rc-a').textContent='오류: '+e.message;toast('❌ '+e.message)}finally{btn.disabled=false;btn.innerHTML='A/B 두 가지 안 생성하기'}}
+
+async function genInsta(){const btn=$('insta-gen-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>A/B 생성 중...';
+const ra=$('insta-ra');ra.classList.add('show');$('insta-rc-a').textContent='A안 생성 중...';$('insta-rc-b').textContent='B안 대기...';$('insta-ab-diff').textContent='';
+try{let tags='';document.querySelectorAll('#i-htag .ad-plat.a').forEach(c=>{if(c.dataset.tags)tags+=' '+c.dataset.tags});
+let img64=null;const fi=document.querySelector('#insta-imgs .isl.filled img');if(fi)img64=fi.src.split(',')[1];
+const base='인스타그램 캡션. 방송중계·LED 전문.\n도입: '+$('i-intro').value+'\n마무리: '+$('i-outro').value+'\n내용: '+($('i-content').value||'(일반)')+'\n해시태그: '+tags+getStyleHint();
+let cost=0;
+const a=await callAI(base+'\n\n[A안: 정보형 - 핵심 강조, 전문적, 명확한 정보 전달. 해시태그 15-20개.]');
+$('insta-rc-a').textContent=a||'';cost+=0.003;$('insta-rc-b').textContent='B안 생성 중...';
+const b=await callAI(base+'\n\n[B안: 감성형 - 스토리텔링, 이모지 풍부, 공감 유도. 해시태그 15-20개.]');
+$('insta-rc-b').textContent=b||'';cost+=0.003;
+const diff=await callAI('인스타 캡션 A/B 비교:\n[A]'+(a||'').substring(0,400)+'\n[B]'+(b||'').substring(0,400)+'\n참여율·도달률·감성 비교. 어느 쪽이 효율이 더 높은지. 3줄.');
+$('insta-ab-diff').textContent=diff||'';cost+=0.001;updCredit('insta',cost);toast('✅ 완료');
+}catch(e){$('insta-rc-a').textContent='오류: '+e.message}finally{btn.disabled=false;btn.innerHTML='A/B 캡션 생성'}}
+
+async function genFB(){const btn=$('fb-gen-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>A/B 생성 중...';
+const ra=$('fb-ra');ra.classList.add('show');$('fb-rc-a').textContent='A안 생성 중...';$('fb-rc-b').textContent='B안 대기...';$('fb-ab-diff').textContent='';
+try{let img64=null;const fi=document.querySelector('#fb-imgs .isl.filled img');if(fi)img64=fi.src.split(',')[1];
+const base='페이스북 게시물. 방송중계·LED 전문.\n도입: '+$('f-intro').value+'\n마무리: '+$('f-outro').value+'\n내용: '+($('f-content').value||'(일반)')+getStyleHint();
+let cost=0;
+const a=await callAI(base+'\n\n[A안: 정보형 + 공유유도. 전문적 톤. 해시태그 5-8개.]');
+$('fb-rc-a').textContent=a||'';cost+=0.003;$('fb-rc-b').textContent='B안 생성 중...';
+const b=await callAI(base+'\n\n[B안: 친근형 + 참여유도 질문형. 공감 중심. 해시태그 5-8개.]');
+$('fb-rc-b').textContent=b||'';cost+=0.003;
+const diff=await callAI('FB A/B비교:\n[A]'+(a||'').substring(0,400)+'\n[B]'+(b||'').substring(0,400)+'\n공유율·도달·참여 비교. 3줄.');
+$('fb-ab-diff').textContent=diff||'';cost+=0.001;updCredit('fb',cost);toast('✅ 완료');
+}catch(e){$('fb-rc-a').textContent='오류: '+e.message}finally{btn.disabled=false;btn.innerHTML='A/B 게시물 생성'}}
+
+function pickAB(platform,choice){const src=$(platform+'-rc-'+choice).textContent;const taMap={blog:'blog-edit-ta',insta:'insta-edit-ta',fb:'fb-edit-ta'};$(taMap[platform]).value=src;if(platform==='blog'){loadToEditor(src);bst(2)}else if(platform==='insta')ist(2);else fst(2);toast('✅ '+choice.toUpperCase()+'안 선택됨')}
+
+// === TEXT CHECK ===
+async function aiCheck(taId,mode){
+if(taId==='blog-edit-ta')syncEditorToTextarea();
+const ta=$(taId);if(!ta.value.trim()){toast('⚠️ 텍스트 입력');return}
+const labels={spell:'오탈자 검사',sensitive:'예민표현 검사',improve:'다듬기'};toast('🔍 '+labels[mode]+'...');
+const prompts={spell:'오탈자와 문법 오류를 찾아 수정해줘. 원문 유지하고 수정된 부분만 표시.',sensitive:'예민하거나 논란 소지 표현을 찾아 대안 제시.',improve:'전체적으로 가독성과 품질을 높여 다듬어줘. 원래 의미 유지.'};
+try{const r=await callAI(prompts[mode]+'\n\n'+ta.value);if(r){ta.value=r;if(taId==='blog-edit-ta')loadToEditor(r)}toast('✅ 완료')}catch(e){toast('❌ '+e.message)}}
+function ins(taId,text){const ta=$(taId);const s=ta.selectionStart;ta.value=ta.value.substring(0,s)+text+ta.value.substring(ta.selectionEnd);ta.selectionStart=ta.selectionEnd=s+text.length;ta.focus()}
+
+// === COMPARE ===
+let cmpHistory=LS('cmp_history')||[];
+
+function setCmpMode(mode){
+document.querySelectorAll('#cmp-pills .sub-pill').forEach(p=>p.classList.remove('a'));
+event.target.classList.add('a');
+$('cmp-dashboard').style.display=mode==='dashboard'?'block':'none';
+$('cmp-text').style.display=mode==='text'?'block':'none';
+$('cmp-url').style.display=mode==='url'?'block':'none';
+}
+
+async function doCompare(){const btn=$('cmp-btn');if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>분석 중...';}
+const isUrl=$('cmp-url').style.display!=='none';
+let textA,textB;
+if(isUrl){textA=($('cmp-url-at').value||'')+'(URL: '+($('cmp-url-a').value||'')+')';textB=($('cmp-url-bt').value||'')+'(URL: '+($('cmp-url-b').value||'')+')';}else{textA=$('cmp-a').value;textB=$('cmp-b').value}
+if(!textA&&!textB){toast('⚠️ 내용 입력');if(btn){btn.disabled=false;btn.innerHTML='AI 비교 분석 실행';}return}
+try{const r=await callAI('콘텐츠 비교 분석:\n\n[내 글]\n'+textA.substring(0,1000)+'\n\n[경쟁사]\n'+textB.substring(0,1000)+'\n\n분석: 1)키워드 전략 2)가독성 3)CTA 강도 4)SEO최적화 5)개선 제안. 표 형식.');
+if(isUrl&&$('cmp-rc2')){$('cmp-rc2').textContent=r;$('cmp-ra2').classList.add('show');}
+else{$('cmp-rc').textContent=r;$('cmp-ra').classList.add('show');}
+// 이력 저장
+cmpHistory.unshift({date:new Date().toLocaleDateString('ko-KR'),myText:textA.substring(0,50),compText:textB.substring(0,50),result:r.substring(0,200)});
+if(cmpHistory.length>10)cmpHistory=cmpHistory.slice(0,10);
+LS('cmp_history',cmpHistory);
+toast('✅ 완료')}catch(e){toast('❌ '+e.message)}finally{if(btn){btn.disabled=false;btn.innerHTML='AI 비교 분석 실행';}}}
+
+// 비교 대시보드 AI 분석
+async function runCmpDashboard(){
+const myText=$('cmp-a').value||'';
+const compText=$('cmp-b').value||'';
+if(!myText&&!compText){toast('⚠️ 먼저 "글 비교" 탭에서 내 글과 경쟁사 글을 입력해주세요');return}
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('🤖 비교 분석 중...');
+try{
+const r=await callAI(`내 글과 경쟁사 글을 정량적으로 비교 분석해줘.
+
+[내 글]
+${myText.substring(0,800)}
+
+[경쟁사 글]
+${compText.substring(0,800)}
+
+반드시 아래 형식으로 점수(1~10)를 답해줘:
+
+종합점수_내글: [점수]/10
+종합점수_경쟁사: [점수]/10
+키워드최적화_내글: [점수]/10
+키워드최적화_경쟁사: [점수]/10
+가독성_내글: [점수]/10
+가독성_경쟁사: [점수]/10
+CTA강도_내글: [점수]/10
+CTA강도_경쟁사: [점수]/10
+SEO최적화_내글: [점수]/10
+SEO최적화_경쟁사: [점수]/10
+독창성_내글: [점수]/10
+독창성_경쟁사: [점수]/10
+
+---우세항목---
+(내가 경쟁사보다 잘한 점 3가지, 각 1줄)
+
+---개선항목---
+(내가 경쟁사보다 부족한 점 3가지, 각 1줄)
+
+---전략제안---
+(경쟁사를 이길 수 있는 구체적인 전략 3가지, 각 2줄)`);
+
+// 점수 파싱
+const items=['키워드최적화','가독성','CTA강도','SEO최적화','독창성'];
+const myScores={},compScores={};
+let myTotal=0,compTotal=0;
+const totalMatch1=r.match(/종합점수_내글[:\s]*(\d+)/);
+const totalMatch2=r.match(/종합점수_경쟁사[:\s]*(\d+)/);
+if(totalMatch1)myTotal=parseInt(totalMatch1[1]);
+if(totalMatch2)compTotal=parseInt(totalMatch2[1]);
+
+items.forEach(item=>{
+const m1=r.match(new RegExp(item+'_내글[:\\s]*(\\d+)'));
+const m2=r.match(new RegExp(item+'_경쟁사[:\\s]*(\\d+)'));
+myScores[item]=m1?parseInt(m1[1]):5;
+compScores[item]=m2?parseInt(m2[1]):5;
+});
+
+if(!myTotal)myTotal=Math.round(Object.values(myScores).reduce((a,b)=>a+b,0)/items.length);
+if(!compTotal)compTotal=Math.round(Object.values(compScores).reduce((a,b)=>a+b,0)/items.length);
+
+$('cmp-my-score').textContent=myTotal+'/10';
+$('cmp-my-score').style.color=myTotal>=compTotal?'var(--g)':'var(--r)';
+$('cmp-comp-score').textContent=compTotal+'/10';
+
+// 바 차트
+$('cmp-bars').innerHTML=items.map(item=>{
+const my=myScores[item]||5;
+const comp=compScores[item]||5;
+const myW=my*10;const compW=comp*10;
+const myColor=my>=comp?'var(--g)':'var(--r)';
+return `<div style="margin-bottom:14px">
+<div style="font-size:.88em;font-weight:600;color:var(--t1);margin-bottom:6px">${item}</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+<span style="width:40px;font-size:.78em;color:var(--t3);text-align:right">내 글</span>
+<div style="flex:1;background:var(--bg1);height:10px;border-radius:6px;overflow:hidden">
+<div style="background:${myColor};height:100%;width:${myW}%;border-radius:6px;transition:width .6s"></div>
+</div>
+<span style="width:32px;font-size:.85em;font-weight:600;color:${myColor}">${my}</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span style="width:40px;font-size:.78em;color:var(--t3);text-align:right">경쟁사</span>
+<div style="flex:1;background:var(--bg1);height:10px;border-radius:6px;overflow:hidden">
+<div style="background:var(--b);height:100%;width:${compW}%;border-radius:6px;transition:width .6s"></div>
+</div>
+<span style="width:32px;font-size:.85em;font-weight:600;color:var(--b)">${comp}</span>
+</div>
+</div>`;
+}).join('');
+
+// 텍스트 섹션 파싱
+const strengthPart=(r.split('---우세항목---')[1]||'').split('---')[0].trim();
+const weakPart=(r.split('---개선항목---')[1]||'').split('---')[0].trim();
+const strategyPart=(r.split('---전략제안---')[1]||'').trim();
+
+$('cmp-strengths').innerHTML=strengthPart?strengthPart.split('\n').filter(l=>l.trim()).map(l=>
+'<div style="padding:8px;background:rgba(52,211,153,.08);border-left:3px solid var(--g);border-radius:var(--r1);margin-bottom:4px">✅ '+l.replace(/^\d+[\.\)]\s*/,'').trim()+'</div>'
+).join(''):'<span style="color:var(--t3)">데이터 없음</span>';
+
+$('cmp-weaknesses').innerHTML=weakPart?weakPart.split('\n').filter(l=>l.trim()).map(l=>
+'<div style="padding:8px;background:rgba(248,113,113,.08);border-left:3px solid var(--r);border-radius:var(--r1);margin-bottom:4px">⚠️ '+l.replace(/^\d+[\.\)]\s*/,'').trim()+'</div>'
+).join(''):'<span style="color:var(--t3)">데이터 없음</span>';
+
+$('cmp-strategy').textContent=strategyPart||'전략 제안을 불러오지 못했습니다.';
+
+// 이력 저장
+cmpHistory.unshift({date:new Date().toLocaleDateString('ko-KR'),myScore:myTotal,compScore:compTotal,myText:myText.substring(0,40),compText:compText.substring(0,40)});
+if(cmpHistory.length>10)cmpHistory=cmpHistory.slice(0,10);
+LS('cmp_history',cmpHistory);
+renderCmpHistory();
+toast('✅ 비교 분석 완료');
+}catch(e){toast('❌ '+e.message)}}
+
+function renderCmpHistory(){
+$('cmp-history-count').textContent=cmpHistory.length;
+if(!cmpHistory.length){$('cmp-history-list').innerHTML='<div style="text-align:center;padding:12px;color:var(--t3);font-size:.88em">비교 이력이 없습니다</div>';return}
+$('cmp-history-list').innerHTML=cmpHistory.map((h,i)=>{
+const myC=h.myScore>=h.compScore?'var(--g)':'var(--r)';
+return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg4);border-radius:var(--r1);margin-bottom:4px">
+<span style="font-size:.78em;color:var(--t3);width:70px;flex-shrink:0">${h.date}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:.82em;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.myText||'내 글'}... vs ${h.compText||'경쟁사'}...</div>
+</div>
+${h.myScore?`<span style="font-weight:600;color:${myC};font-size:.88em">${h.myScore}</span><span style="color:var(--t3);font-size:.78em">vs</span><span style="font-weight:600;color:var(--b);font-size:.88em">${h.compScore}</span>`:''}
+</div>`;
+}).join('');
+}
+
+function clearCmpHistory(){
+cmpHistory=[];LS('cmp_history',[]);renderCmpHistory();toast('🗑️ 이력 초기화');
+}
+
+// === OOH DATA ===
+const OOH=[
+{id:'led',icon:'🖥️',name:'야외 전광판(LED)',loc:'강남역, 코엑스, 명동, 타임스퀘어',price:'300~2,000만/월',cpm:'₩120~350',reach:'월 500만~3,000만',score:4.2,agency:'제일기획, HS애드, 나스미디어',effect:'24시간 노출, 영상소재, 대형 임팩트',detail:'강남역 사거리 월 1,500만원 기준 일 유동인구 30만. 15초/30초 슬롯 운영.'},
+{id:'bus',icon:'🚌',name:'버스 외부 랩핑',loc:'서울 시내버스 주요 노선',price:'80~180만/대/월',cpm:'₩85~200',reach:'월 120만~300만/대',score:4.5,agency:'대홍기획, 이노션, 버스미디어',effect:'이동형 광고, 넓은 커버리지',detail:'2~3대 운영 시 노출 극대화. 6개월 이상 계약 20% 할인.'},
+{id:'taxi',icon:'🚕',name:'택시 탑라이트',loc:'서울·수도권 전역',price:'12~18만/대/월',cpm:'₩50~120',reach:'월 80만~150만/대',score:4.8,agency:'모빌아이, 택시미디어, T-ad',effect:'가성비 최고, GPS 타겟팅',detail:'10대+ 운영 시 단가↓. 야간 LED 발광 효과 우수.'},
+{id:'banner',icon:'🏳️',name:'현수막',loc:'도로변, 아파트 단지, 상가',price:'5~15만/개/월',cpm:'₩30~80',reach:'월 10만~50만/개',score:3.8,agency:'지역 구청 신청, 현수막114',effect:'최저가, 지역 타겟팅 최적',detail:'설치 규제 지역별 상이. 풍수해 파손 리스크.'},
+{id:'train',icon:'🚄',name:'기차역(KTX)',loc:'서울역, 용산, 수서, 대전역',price:'200~800만/월',cpm:'₩150~400',reach:'월 200만~800만',score:3.9,agency:'코레일유통, 메트로AD',effect:'비즈니스 타겟, 고소득층',detail:'서울역 중앙홀 월 500만. 일 유동 25만명. 장기계약 할인.'},
+{id:'subway',icon:'🚇',name:'지하철 스크린도어',loc:'2호선 강남·잠실·홍대',price:'150~500만/월',cpm:'₩100~250',reach:'월 300만~1,200만',score:4.3,agency:'서울메트로AD, 메트로미디어',effect:'출퇴근 집중 노출, 영상 가능',detail:'스크린도어 LED 영상형 월 300만~. 2호선 강남역 월 유동 500만명.'},
+{id:'dooh',icon:'📺',name:'DOOH(디지털OOH)',loc:'쇼핑몰, 엘리베이터, 편의점',price:'50~300만/월',cpm:'₩80~200',reach:'월 100만~500만',score:4.1,agency:'포커스미디어, 나스미디어',effect:'정밀 타겟팅, 반복 노출',detail:'엘리베이터 스크린(아파트/오피스) 월 50만~. 편의점 사이니지 월 80만~.'},
+{id:'coffee',icon:'☕',name:'커피차(이동형)',loc:'행사장, 촬영장, 오피스 앞',price:'30~80만/회',cpm:'₩500~1,500',reach:'회당 500~2,000명',score:3.5,agency:'커피차114, 이벤트커피',effect:'브랜드 경험, SNS 바이럴',detail:'1회성이나 바이럴 효과. 로고 컵+배너+시음 패키지.'}
+];
+function rOOH(){let h='';OOH.forEach(o=>{h+='<div class="ooh-card" onclick="showOoh(\''+o.id+'\')"><div class="ooh-icon">'+o.icon+'</div><div class="ooh-name">'+o.name+'</div><div class="ooh-price">💰 '+o.price+'</div><div class="ooh-info">📍 '+o.loc+'<br>👁 '+o.reach+'<br>📊 CPM: '+o.cpm+'<br>⭐ '+o.score+'/5<br>🏢 '+o.agency.split(',')[0]+'</div></div>'});$('ooh-grid').innerHTML=h}
+function rOOHT(){let h='';OOH.forEach(o=>{const sc=o.score>=4.5?'green':o.score>=4?'yellow':'blue';h+='<tr onclick="showOoh(\''+o.id+'\')" style="cursor:pointer"><td>'+o.icon+' '+o.name+'</td><td>'+o.loc+'</td><td style="color:var(--ac)">'+o.price+'</td><td>'+o.reach+'</td><td>'+o.cpm+'</td><td><span class="badge '+sc+'">'+o.score+'/5</span></td><td style="font-size:.72em">'+o.agency+'</td></tr>'});$('ooh-tbody').innerHTML=h}
+function showOoh(id){const o=OOH.find(x=>x.id===id);if(!o)return;const box=$('ooh-detail-box');box.classList.add('show');box.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:2em">'+o.icon+'</span><div><div style="font-weight:700;font-size:1.05em">'+o.name+'</div><div style="font-size:.78em;color:var(--t2)">'+o.effect+'</div></div></div><div class="stat-grid" style="margin-bottom:10px"><div class="stat-card"><div class="stat-v">'+o.price+'</div><div class="stat-l">예상 단가</div></div><div class="stat-card"><div class="stat-v">'+o.reach+'</div><div class="stat-l">월 노출</div></div><div class="stat-card"><div class="stat-v">'+o.cpm+'</div><div class="stat-l">CPM</div></div><div class="stat-card"><div class="stat-v" style="color:var(--g)">'+o.score+'/5</div><div class="stat-l">가성비</div></div></div><div class="tip-box"><b>🏢 대행사:</b> '+o.agency+'<br><b>📝 상세:</b> '+o.detail+'</div>';box.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function setOohMode(mode){document.querySelectorAll('#ooh-pills .sub-pill').forEach(p=>p.classList.remove('a'));event.target.classList.add('a');$('ooh-find').style.display=mode==='find'?'block':'none';$('ooh-detail').style.display=mode==='detail'?'block':'none'}
+
+// === AD SIMULATOR ===
+let adPlat='naver';
+function setAdPlat(el,p){document.querySelectorAll('#ad-plats .ad-plat').forEach(b=>b.classList.remove('a'));el.classList.add('a');adPlat=p;updateAd()}
+function updateAd(){const v=parseInt($('ad-sl').value);const period=parseInt($('ad-period').value);const age=$('ad-age').value;const gender=$('ad-gender').value;const region=$('ad-region').value;const name=$('ad-name').value;
+$('ad-budget-v').textContent='₩'+v.toLocaleString();
+const P={naver:{name:'네이버 검색광고',cpc:850,ctr:0.035,conv:0.03},insta:{name:'인스타그램 릴스',cpm:5500,ctr:0.02,conv:0.008},fb:{name:'페이스북 피드',cpm:4800,ctr:0.018,conv:0.007},gdn:{name:'구글 GDN',cpm:2800,ctr:0.008,conv:0.005}};
+const p=P[adPlat];const regionMult=region==='서울'?1.3:region==='전국'?1:0.85;
+let clicks=p.cpc?Math.round(v/p.cpc*regionMult):Math.round(v/p.cpm*1000*p.ctr*regionMult);
+let leads=Math.max(1,Math.round(clicks*p.conv));let cpl=Math.round(v/leads);let totalBudget=v*period;
+$('ad-stats').innerHTML=['<div class="stat-card"><div class="stat-v">'+name.substring(0,12)+'</div><div class="stat-l">광고명</div></div>','<div class="stat-card"><div class="stat-v">₩'+(totalBudget/10000).toFixed(0)+'만</div><div class="stat-l">총예산('+period+'개월)</div></div>','<div class="stat-card"><div class="stat-v">'+clicks.toLocaleString()+'</div><div class="stat-l">예상 클릭/월</div></div>','<div class="stat-card"><div class="stat-v" style="color:var(--g)">'+leads+'건</div><div class="stat-l">예상 문의/월</div></div>'].join('');
+// Cost detail
+let cdH='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:.78em;color:var(--t2)"><div>💰 월예산<br><b style="color:var(--ac)">₩'+v.toLocaleString()+'</b></div><div>🖱️ 예상 클릭<br><b style="color:var(--b)">'+clicks.toLocaleString()+'회</b></div><div>📞 예상 문의<br><b style="color:var(--g)">'+leads+'건</b></div><div>💵 문의당 비용<br><b>₩'+cpl.toLocaleString()+'</b></div><div>🎯 타겟<br><b>'+age+' / '+gender+'</b></div><div>📍 지역<br><b>'+region+'</b></div></div>';
+cdH+='<div class="tip-box" style="margin-top:8px"><b>💡 '+p.name+'</b> | '+name+'<br>'+period+'개월 총 ₩'+(totalBudget/10000).toFixed(0)+'만 투자 시 문의 약 <b style="color:var(--g)">'+(leads*period)+'건</b> 예상<br>문의당 비용 ₩'+cpl.toLocaleString()+' | 예상 ROI <b>'+Math.round(leads*500000/v*100)+'%</b></div>';
+$('ad-cost-detail').innerHTML=cdH;
+// CRM Funnel
+const imp=p.cpc?clicks*28:Math.round(v/p.cpm*1000);
+let crm='<div style="font-size:.78em">';
+const stages=[{n:'노출',v:imp,c:'var(--t2)'},{n:'클릭',v:clicks,c:'var(--b)'},{n:'관심(페이지뷰)',v:Math.round(clicks*0.6),c:'var(--ac)'},{n:'문의',v:leads,c:'var(--g)'},{n:'견적요청',v:Math.max(1,Math.round(leads*0.5)),c:'var(--g)'},{n:'계약',v:Math.max(1,Math.round(leads*0.15)),c:'#a855f7'}];
+stages.forEach((s,i)=>{const w=Math.max(20,Math.round(s.v/imp*100));crm+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="width:80px;text-align:right;color:var(--t2)">'+s.n+'</div><div style="background:'+s.c+';height:22px;width:'+w+'%;border-radius:4px;opacity:0.7"></div><b style="color:'+s.c+'">'+s.v.toLocaleString()+'</b></div>'});
+crm+='</div>';$('ad-crm').innerHTML=crm}
+
+// AI 광고 추천
+async function getAdRecommend(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+const budget=parseInt($('ad-sl').value);
+const age=$('ad-age').value;
+const gender=$('ad-gender').value;
+const region=$('ad-region').value;
+const kw=$('ad-kw').value||'LED전광판, 방송중계';
+const name=$('ad-name').value||'';
+toast('🤖 맞춤 광고 분석 중...');
+try{
+const r=await callAI(`LED전광판/방송중계/영상장비 업종의 광고 전략을 추천해줘.
+
+조건:
+- 월 예산: ₩${budget.toLocaleString()}
+- 타겟: ${age} / ${gender} / ${region}
+- 키워드: ${kw}
+- 캠페인: ${name}
+
+정확히 4개의 광고를 추천해줘. 각 광고는 이 형식으로:
+광고유형 | 플랫폼 | 추천예산비율(%) | 예상 효과 | 추천 이유 한줄
+
+예: 검색광고 | 네이버 | 40% | 월 문의 15건 예상 | 구매 의도 높은 키워드 타겟
+
+마지막에 "💡 종합전략:" 으로 전체 예산 배분 전략 2줄.`);
+
+const lines=r.split('\n').filter(l=>l.trim());
+let cardsHTML='';
+let strategy='';
+const icons={'검색':'🔍','블로그':'📝','인스타':'📸','SNS':'📱','GDN':'🌐','배너':'🖼️','리타겟':'🎯','브랜드':'⭐','영상':'🎬','유튜브':'▶️','카카오':'💬','페이스':'👥','네이버':'🟢','구글':'🔵'};
+
+lines.forEach(line=>{
+if(line.includes('종합전략')||line.includes('💡')){
+strategy+=line.trim()+'\n';
+return;
+}
+const p=line.split('|');
+if(p.length>=4){
+const type=p[0].trim().replace(/^\d+[\.\)]\s*/,'');
+const platform=p[1].trim();
+const budgetPct=p[2].trim();
+const effect=p[3].trim();
+const reason=p[4]?p[4].trim():'';
+const budgetNum=parseInt(budgetPct)||25;
+const budgetAmt=Math.round(budget*budgetNum/100);
+let icon='📢';
+for(const[k,v]of Object.entries(icons)){if(type.includes(k)||platform.includes(k)){icon=v;break;}}
+const color=budgetNum>=40?'var(--ac)':budgetNum>=25?'var(--b)':'var(--g)';
+cardsHTML+=`<div style="padding:14px;background:var(--bg4);border-radius:var(--r2);border-left:3px solid ${color}">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+<div style="display:flex;align-items:center;gap:6px">
+<span style="font-size:1.2em">${icon}</span>
+<span style="font-weight:700;color:var(--t1)">${type}</span>
+<span style="font-size:.78em;color:var(--t3)">${platform}</span>
+</div>
+<span style="padding:2px 10px;border-radius:10px;font-size:.82em;font-weight:600;background:${color}22;color:${color}">${budgetPct}</span>
+</div>
+<div style="font-size:.85em;color:var(--t2);margin-bottom:4px">₩${budgetAmt.toLocaleString()}/월 · ${effect}</div>
+${reason?`<div style="font-size:.82em;color:var(--t3)">→ ${reason}</div>`:''}
+</div>`;
+}
+});
+
+$('ad-rec-cards').innerHTML=cardsHTML||'<div style="color:var(--t3);text-align:center;padding:12px">추천 결과를 불러오지 못했습니다</div>';
+if(strategy.trim()){
+$('ad-rec-cards').innerHTML+=`<div class="tip-box" style="margin-top:4px"><b>${strategy.trim().replace(/\n/g,'<br>')}</b></div>`;
+}
+toast('✅ 광고 추천 완료');
+}catch(e){toast('❌ '+e.message)}}
+
+// === KEYWORD RESEARCH ===
+let kwrSaved=LS('kwr_saved')||[];
+let kwrRecent=LS('kwr_recent')||[];
+let kwrContentData=[];
+let kwrCurrentPlat='all';
+
+function renderKwrRecent(){
+const el=$('kwr-recent');
+if(!kwrRecent.length){el.innerHTML='<span style="font-size:.82em;color:var(--t3)">최근 검색 없음</span>';return}
+el.innerHTML='<span style="font-size:.82em;color:var(--t3);margin-right:4px">최근:</span>'+kwrRecent.slice(0,5).map(k=>
+`<button class="ebtn" onclick="$('kwr-input').value='${k.replace(/'/g,"\\'")}';searchKeyword()">${k}</button>`
+).join('');
+}
+
+async function searchKeyword(){
+const kw=$('kwr-input').value.trim();
+if(!kw){toast('⚠️ 키워드를 입력해주세요');return}
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+
+// 최근 검색 저장
+kwrRecent=kwrRecent.filter(k=>k!==kw);
+kwrRecent.unshift(kw);
+if(kwrRecent.length>10)kwrRecent=kwrRecent.slice(0,10);
+LS('kwr_recent',kwrRecent);
+renderKwrRecent();
+
+const btn=$('kwr-btn');
+btn.disabled=true;btn.innerHTML='<span class="spinner"></span>분석 중...';
+toast('🔍 "'+kw+'" 키워드 분석 중...');
+
+try{
+// 1차: 검색량 + 트렌드 + 연관키워드
+const r1=await callAI(`"${kw}" 키워드를 분석해줘. 실제적으로 시뮬레이션해서 답해.
+
+반드시 아래 형식 그대로 답해줘:
+
+월간검색량_네이버: [숫자]
+월간검색량_구글: [숫자]
+경쟁강도: [상/중상/중/중하/하]
+트렌드: [상승/유지/하락]
+트렌드변화율: [+/-숫자]%
+
+월별검색량(최근12개월,네이버): [숫자12개 쉼표구분]
+월별검색량(최근12개월,구글): [숫자12개 쉼표구분]
+
+연관키워드(10개): [키워드|월검색량|경쟁도] 형식, 한줄에 하나
+
+---인사이트---
+1) 이 키워드의 검색 의도 분석 (정보탐색/구매의도/비교 등)
+2) 콘텐츠 제작 시 공략 포인트
+3) 추천 롱테일 키워드 3개
+4) 시즌별 특이사항
+각 2줄 이내.`);
+
+// 파싱
+const naverVol=parseInt((r1.match(/월간검색량_네이버[:\s]*([\d,]+)/)||[])[1]?.replace(/,/g,''))||3200;
+const googleVol=parseInt((r1.match(/월간검색량_구글[:\s]*([\d,]+)/)||[])[1]?.replace(/,/g,''))||1800;
+const totalVol=naverVol+googleVol;
+const comp=(r1.match(/경쟁강도[:\s]*(상|중상|중|중하|하)/)||[])[1]||'중';
+const trend=(r1.match(/트렌드[:\s]*(상승|유지|하락)/)||[])[1]||'유지';
+const trendPct=(r1.match(/트렌드변화율[:\s]*([+\-]?\d+)/)||[])[1]||'+5';
+
+// 월별 데이터
+const naverMonths=(r1.match(/월별검색량\(최근12개월,네이버\)[:\s]*([\d,\s]+)/)||[])[1];
+const googleMonths=(r1.match(/월별검색량\(최근12개월,구글\)[:\s]*([\d,\s]+)/)||[])[1];
+const nArr=naverMonths?naverMonths.split(',').map(n=>parseInt(n.trim())||0):Array.from({length:12},()=>Math.round(naverVol*(0.7+Math.random()*0.6)));
+const gArr=googleMonths?googleMonths.split(',').map(n=>parseInt(n.trim())||0):Array.from({length:12},()=>Math.round(googleVol*(0.7+Math.random()*0.6)));
+
+// 연관 키워드
+const relLines=r1.split('\n').filter(l=>l.includes('|')&&!l.includes('월간')&&!l.includes('월별'));
+const relKws=relLines.map(l=>{
+const p=l.split('|');
+if(p.length>=2){
+const k=p[0].trim().replace(/^\d+[\.\)]\s*/,'');
+const v=p[1].trim();
+const c=p[2]?p[2].trim():'중';
+return {kw:k,vol:v,comp:c};
+}
+return null;
+}).filter(Boolean).slice(0,10);
+
+// 인사이트
+const insightPart=(r1.split('---인사이트---')[1]||r1.split('\n').slice(-8).join('\n')).trim();
+
+// 지표 카드 업데이트
+$('kwr-volume').textContent=totalVol.toLocaleString();
+$('kwr-volume-sub').textContent='네이버 '+naverVol.toLocaleString()+' + 구글 '+googleVol.toLocaleString();
+const compColor=comp.includes('상')?'var(--r)':comp==='중'?'var(--ac)':'var(--g)';
+$('kwr-competition').innerHTML='<span style="color:'+compColor+'">'+comp+'</span>';
+$('kwr-trend').textContent=trend;
+$('kwr-trend').style.color=trend==='상승'?'var(--g)':trend==='하락'?'var(--r)':'var(--ac)';
+$('kwr-trend-sub').textContent=trendPct+'% 변화';
+
+// 차트
+const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const now=new Date();
+const startMonth=now.getMonth()+1;
+const maxVal=Math.max(...nArr,...gArr);
+$('kwr-chart').innerHTML=nArr.map((n,i)=>{
+const g=gArr[i]||0;
+const nH=Math.max(4,Math.round(n/maxVal*140));
+const gH=Math.max(4,Math.round(g/maxVal*140));
+const mIdx=(startMonth-12+i+12)%12;
+return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+<div class="trend-bar-group">
+<div class="trend-bar" style="height:${gH}px;background:var(--b)" title="구글 ${g.toLocaleString()}"></div>
+<div class="trend-bar" style="height:${nH}px;background:var(--ac)" title="네이버 ${n.toLocaleString()}"></div>
+</div>
+<div class="trend-day-label">${months[mIdx]}</div>
+</div>`;
+}).join('');
+
+// 연관 키워드
+$('kwr-related').innerHTML=relKws.map(r=>{
+const cColor=r.comp.includes('상')?'var(--r)':r.comp.includes('하')?'var(--g)':'var(--ac)';
+return `<div style="padding:6px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:6px" onclick="$('kwr-input').value='${r.kw.replace(/'/g,"\\'")}';searchKeyword()">
+<span style="font-size:.88em;color:var(--t1);font-weight:500">${r.kw}</span>
+<span style="font-size:.75em;color:var(--t3)">${r.vol}</span>
+<span style="font-size:.65em;padding:1px 5px;border-radius:6px;background:${cColor}18;color:${cColor}">${r.comp}</span>
+</div>`;
+}).join('');
+
+$('kwr-insight').textContent=insightPart;
+
+// 2차: 관련 콘텐츠
+const r2=await callAI(`"${kw}" 키워드로 검색했을 때 나오는 콘텐츠를 시뮬레이션해줘.
+
+기사 5개, 블로그 5개, SNS(인스타/페이스북) 5개 총 15개.
+형식 (한줄에 하나):
+타입(기사/블로그/SNS) | 제목 | 출처(매체명) | 조회수 | 날짜(YYYY.MM.DD) | 요약(20자이내)
+
+최신순 정렬. 실제적으로 그럴듯하게.`);
+
+const contentLines=r2.split('\n').filter(l=>l.includes('|'));
+kwrContentData=contentLines.map((line,i)=>{
+const p=line.split('|').map(s=>s.trim());
+if(p.length>=5){
+const type=p[0].replace(/^\d+[\.\)]\s*/,'');
+return{
+type:type.includes('기사')||type.includes('뉴스')?'news':type.includes('블로그')?'blog':'sns',
+title:p[1]||'',
+source:p[2]||'',
+views:p[3]||'',
+date:p[4]||'',
+desc:p[5]||''
+};
+}
+return null;
+}).filter(Boolean);
+
+const totalContent=kwrContentData.length;
+$('kwr-content-count').textContent=totalContent;
+$('kwr-searched-kw').textContent='"'+kw+'"';
+kwrCurrentPlat='all';
+document.querySelectorAll('#kwr-plat-pills .sub-pill').forEach(p=>p.classList.remove('a'));
+document.querySelectorAll('#kwr-plat-pills .sub-pill')[0].classList.add('a');
+renderKwrContent();
+
+$('kwr-empty').style.display='none';
+$('kwr-results').style.display='block';
+toast('✅ "'+kw+'" 분석 완료');
+}catch(e){toast('❌ '+e.message)}finally{
+btn.disabled=false;btn.innerHTML='🔍 분석';
+}}
+
+function setKwrPlat(plat){
+kwrCurrentPlat=plat;
+document.querySelectorAll('#kwr-plat-pills .sub-pill').forEach(p=>p.classList.remove('a'));
+event.target.classList.add('a');
+renderKwrContent();
+}
+
+function renderKwrContent(){
+const filtered=kwrCurrentPlat==='all'?kwrContentData:kwrContentData.filter(c=>c.type===kwrCurrentPlat);
+$('kwr-list-count').textContent=filtered.length;
+if(!filtered.length){$('kwr-content-list').innerHTML='<div style="text-align:center;padding:16px;color:var(--t3);font-size:.88em">콘텐츠가 없습니다</div>';return}
+
+const typeIcon={news:'📰',blog:'📝',sns:'📱'};
+const typeLabel={news:'기사',blog:'블로그',sns:'SNS'};
+const typeColor={news:'var(--b)',blog:'var(--g)',sns:'#a855f7'};
+
+$('kwr-content-list').innerHTML=filtered.map((c,i)=>{
+return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--r2);margin-bottom:4px;border-left:3px solid ${typeColor[c.type]}">
+<span style="font-size:1.2em;flex-shrink:0">${typeIcon[c.type]}</span>
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+<span style="font-size:.7em;padding:1px 6px;border-radius:4px;background:${typeColor[c.type]}18;color:${typeColor[c.type]};font-weight:600">${typeLabel[c.type]}</span>
+<span style="font-size:.78em;color:var(--t3)">${c.source}</span>
+<span style="font-size:.75em;color:var(--t3);margin-left:auto;flex-shrink:0">${c.date}</span>
+</div>
+<div style="font-weight:600;font-size:.88em;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.title}</div>
+${c.desc?'<div style="font-size:.78em;color:var(--t3);margin-top:2px">'+c.desc+'</div>':''}
+</div>
+<div style="text-align:right;flex-shrink:0">
+<div style="font-size:.88em;font-weight:600;color:var(--ac);font-family:var(--fm)">${c.views}</div>
+<div style="font-size:.7em;color:var(--t3)">조회수</div>
+</div>
+</div>`;
+}).join('');
+}
+
+// 키워드 저장
+function saveKw(kw){
+if(kwrSaved.find(k=>k.kw===kw))return toast('이미 저장됨');
+kwrSaved.push({kw,date:new Date().toLocaleDateString('ko-KR'),vol:$('kwr-volume').textContent});
+LS('kwr_saved',kwrSaved);
+renderKwrSaved();
+toast('⭐ 저장됨');
+}
+
+function renderKwrSaved(){
+$('kwr-saved-count').textContent=kwrSaved.length;
+if(!kwrSaved.length){$('kwr-saved-list').innerHTML='<div style="text-align:center;padding:12px;color:var(--t3);font-size:.88em">저장된 키워드가 없습니다</div>';return}
+$('kwr-saved-list').innerHTML=kwrSaved.map(k=>
+`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg4);border-radius:var(--r1);margin-bottom:4px">
+<span style="font-size:.88em;font-weight:600;color:var(--t1);flex:1;cursor:pointer" onclick="$('kwr-input').value='${k.kw.replace(/'/g,"\\'")}';searchKeyword()">${k.kw}</span>
+<span style="font-size:.78em;color:var(--t3)">${k.vol||''}</span>
+<span style="font-size:.78em;color:var(--t3)">${k.date}</span>
+<button class="ebtn" onclick="kwrSaved=kwrSaved.filter(x=>x.kw!=='${k.kw.replace(/'/g,"\\'")}');LS('kwr_saved',kwrSaved);renderKwrSaved()" style="color:var(--r)">삭제</button>
+</div>`
+).join('');
+}
+
+function clearSavedKw(){
+kwrSaved=[];LS('kwr_saved',[]);renderKwrSaved();toast('🗑️ 초기화');
+}
+
+// === STYLE LEARNING ===
+function setStyleMode(mode){
+document.querySelectorAll('#style-pills .sub-pill').forEach(p=>p.classList.remove('a'));
+event.target.classList.add('a');
+$('style-dashboard').style.display=mode==='dashboard'?'block':'none';
+$('style-paste').style.display=mode==='paste'?'block':'none';
+$('style-url').style.display=mode==='url'?'block':'none';
+$('style-compare').style.display=mode==='compare'?'block':'none';
+if(mode==='dashboard')renderStyleDash();
+}
+
+// 저장된 글 & 분석 데이터
+let styleTexts=LS('style_texts')||[];
+let styleAnalysis=LS('style_analysis')||null;
+
+function saveStyleText(title,text,source){
+const item={
+id:Date.now(),
+title:title||('글 '+(styleTexts.length+1)),
+text:text.substring(0,2000),
+source:source,
+date:new Date().toLocaleDateString('ko-KR'),
+charCount:text.length,
+sentCount:(text.match(/[.!?。]\s/g)||[]).length+1,
+wordCount:text.split(/\s+/).filter(w=>w).length
+};
+styleTexts.push(item);
+LS('style_texts',styleTexts);
+}
+
+async function learnStyle(mode){
+let text='',title='';
+if(mode==='paste'){text=$('style-ta').value;title=$('style-title').value;}
+else{text=$('style-url-content').value;title=$('style-url-in').value;}
+if(!text.trim()){toast('⚠️ 텍스트 입력');return}
+toast('🎨 학습 중...');
+try{
+const r=await callAI(`이 글의 문체를 정량적으로 분석해줘:
+
+${text.substring(0,1500)}
+
+반드시 아래 형식으로 점수(1~10)를 먼저 답하고, 그 아래에 분석 설명:
+
+톤(격식도): [점수]/10
+문장길이: [점수]/10
+이모지사용: [점수]/10
+전문용어: [점수]/10
+친근감: [점수]/10
+설득력: [점수]/10
+
+---
+1) 톤: (격식/비격식 설명)
+2) 문장 구조 특징
+3) 자주 쓰는 표현 패턴
+4) 독자 호칭 방식
+5) 전체 문체 한줄 요약`);
+
+// 글 저장
+saveStyleText(title,text,mode==='paste'?'붙여넣기':'URL');
+
+// 분석 결과 파싱 & 저장
+const scores={};
+const scoreLines=r.split('\n').filter(l=>l.match(/[:\：]\s*\d/));
+const labels=['톤(격식도)','문장길이','이모지사용','전문용어','친근감','설득력'];
+const keys=['formality','sentLen','emoji','jargon','friendly','persuasion'];
+scoreLines.forEach(line=>{
+keys.forEach((k,i)=>{
+if(line.includes(labels[i])||line.toLowerCase().includes(k)){
+const m=line.match(/(\d+)\s*\/\s*10/);
+if(m)scores[k]=parseInt(m[1]);
+}
+});
+});
+// 기본값 채우기
+keys.forEach(k=>{if(!scores[k])scores[k]=5+Math.floor(Math.random()*3)});
+
+const descPart=r.split('---')[1]||r.split('\n').slice(6).join('\n');
+styleAnalysis={scores,desc:descPart.trim(),raw:r,date:new Date().toLocaleDateString('ko-KR'),textCount:styleTexts.length};
+LS('style_analysis',styleAnalysis);
+LS('style_profile',r);
+
+$('style-rc').textContent=r||'';
+$('style-ra').classList.add('show');
+toast('✅ 문체 학습 완료 & 저장됨');
+
+// 입력 초기화
+if(mode==='paste'){$('style-ta').value='';$('style-title').value='';}
+}catch(e){toast('❌ '+e.message)}}
+
+async function compareStyles(){const a=$('style-cmp-a').value,b=$('style-cmp-b').value;
+if(!a||!b){toast('⚠️ 두 글 모두 입력');return}toast('⚖️ 비교 중...');
+try{const r=await callAI('두 글의 문체를 비교 분석:\n\n[글 A]\n'+a.substring(0,500)+'\n\n[글 B]\n'+b.substring(0,500)+'\n\n비교: 1)톤 차이 2)문장 구조 3)단어 선택 4)독자 접근성 5)어느 쪽이 더 효과적인지와 이유. 표 형식.');
+$('style-rc').textContent=r||'';$('style-ra').classList.add('show');toast('✅ 비교 완료')}catch(e){toast('❌ '+e.message)}}
+
+// 대시보드 렌더링
+function renderStyleDash(){
+if(!styleAnalysis||styleTexts.length===0){
+$('style-dash-empty').style.display='block';
+$('style-dash-content').style.display='none';
+return;
+}
+$('style-dash-empty').style.display='none';
+$('style-dash-content').style.display='block';
+
+const s=styleAnalysis.scores;
+const avgChars=styleTexts.length?Math.round(styleTexts.reduce((a,t)=>a+t.charCount,0)/styleTexts.length):0;
+const avgWords=styleTexts.length?Math.round(styleTexts.reduce((a,t)=>a+t.wordCount,0)/styleTexts.length):0;
+const avgSents=styleTexts.length?Math.round(styleTexts.reduce((a,t)=>a+t.sentCount,0)/styleTexts.length):0;
+
+// 지표 카드
+$('style-metrics').innerHTML=`
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">학습된 글</span><span class="hero-icon views">📚</span></div>
+<div class="hero-val">${styleTexts.length}편</div>
+<div class="hero-sub">마지막 학습: ${styleAnalysis.date}</div>
+</div>
+<div class="hero-card">
+<div class="hero-top"><span class="hero-label">평균 글 길이</span><span class="hero-icon posts">📏</span></div>
+<div class="hero-val">${avgChars.toLocaleString()}자</div>
+<div class="hero-sub">평균 ${avgSents}문장 · ${avgWords}단어</div>
+</div>
+`;
+
+// 바 차트 지표
+const barData=[
+{label:'격식도',key:'formality',color:'var(--b)',desc:'높을수록 격식체'},
+{label:'문장 길이',key:'sentLen',color:'var(--ac)',desc:'높을수록 긴 문장'},
+{label:'이모지 활용',key:'emoji',color:'#facc15',desc:'높을수록 이모지 많음'},
+{label:'전문 용어',key:'jargon',color:'var(--r)',desc:'높을수록 전문적'},
+{label:'친근감',key:'friendly',color:'var(--g)',desc:'높을수록 친근'},
+{label:'설득력',key:'persuasion',color:'#a855f7',desc:'높을수록 설득적'}
+];
+$('style-bars').innerHTML=barData.map(b=>{
+const val=s[b.key]||5;
+const pct=val*10;
+return `<div style="margin-bottom:10px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+<span style="font-size:.88em;font-weight:600;color:var(--t1)">${b.label}</span>
+<span style="font-size:.82em;color:var(--t3)">${val}/10 · ${b.desc}</span>
+</div>
+<div style="background:var(--bg1);height:10px;border-radius:6px;overflow:hidden">
+<div style="background:${b.color};height:100%;width:${pct}%;border-radius:6px;transition:width .6s"></div>
+</div>
+</div>`;
+}).join('');
+
+// 문체 요약
+$('style-summary').textContent=styleAnalysis.desc||'분석 결과가 없습니다.';
+
+// 저장된 글 목록
+$('style-count').textContent=styleTexts.length;
+$('style-saved-list').innerHTML=styleTexts.length?styleTexts.slice().reverse().map(t=>`
+<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--r2);margin-bottom:6px;border-left:3px solid var(--ac)">
+<div style="flex:1;min-width:0">
+<div style="font-weight:600;font-size:.88em;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
+<div style="font-size:.8em;color:var(--t3);margin-top:2px">${t.date} · ${t.source} · ${t.charCount.toLocaleString()}자 · ${t.sentCount}문장</div>
+</div>
+<button class="ebtn" onclick="viewStyleText(${t.id})">보기</button>
+<button class="ebtn" onclick="deleteStyleText(${t.id})" style="color:var(--r)">삭제</button>
+</div>
+`).join(''):'<div style="text-align:center;padding:16px;color:var(--t3);font-size:.88em">저장된 글이 없습니다</div>';
+}
+
+function viewStyleText(id){
+const t=styleTexts.find(x=>x.id===id);
+if(!t)return;
+$('style-ta').value=t.text;
+$('style-title').value=t.title;
+setStyleMode('paste');
+document.querySelectorAll('#style-pills .sub-pill').forEach(p=>p.classList.remove('a'));
+document.querySelectorAll('#style-pills .sub-pill')[1].classList.add('a');
+toast('📄 "'+t.title+'" 불러옴');
+}
+
+function deleteStyleText(id){
+styleTexts=styleTexts.filter(x=>x.id!==id);
+LS('style_texts',styleTexts);
+renderStyleDash();
+toast('🗑️ 삭제됨');
+}
+
+function clearStyleTexts(){
+if(!confirm('모든 학습 글을 삭제하시겠습니까?'))return;
+styleTexts=[];
+styleAnalysis=null;
+LS('style_texts',[]);
+LS('style_analysis',null);
+renderStyleDash();
+toast('🗑️ 전체 삭제됨');
+}
+
+// === IMAGE ===
+function addI(input,containerId){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const slot=input.closest('.isl');slot.innerHTML='<img src="'+e.target.result+'">'; slot.classList.add('filled')};reader.readAsDataURL(file)}
+function addIS(containerId){const c=$(containerId);const slot=document.createElement('div');slot.className='isl';slot.onclick=function(){this.querySelector('input').click()};slot.innerHTML='<span style="color:var(--t3);font-size:1.4em">+</span><input type="file" accept="image/*" style="display:none" onchange="addI(this,\''+containerId+'\')">';c.appendChild(slot)}
+
+// === COPY ===
+function copyF(platform){let text='';if(platform==='blog')text=$('blog-final').textContent||getEditorText();else if(platform==='insta')text=$('insta-edit-ta').value;else text=$('fb-edit-ta').value;
+if(text)navigator.clipboard.writeText(text).then(()=>toast('📋 복사됨')).catch(()=>toast('❌ 복사 실패'))}
+
+// === HELPERS ===
+function togFP(btn){btn.classList.toggle('a');const panel=btn.nextElementSibling;panel.classList.toggle('show')}
+
+// === DASHBOARD ===
+// 7일 트렌드 데이터
+const trendData=[
+{day:'월',blog:1800,insta:1400},
+{day:'화',blog:2200,insta:1900},
+{day:'수',blog:1500,insta:1100},
+{day:'목',blog:2800,insta:2300},
+{day:'금',blog:2100,insta:1700},
+{day:'토',blog:800,insta:600},
+{day:'일',blog:1200,insta:900}
+];
+let trendFilter='all';
+
+function setTrendFilter(mode){
+trendFilter=mode;
+document.querySelectorAll('#trend-tabs .trend-tab').forEach(t=>t.classList.remove('a'));
+event.target.classList.add('a');
+renderTrend();
+}
+
+function renderTrend(){
+const maxVal=Math.max(...trendData.map(d=>trendFilter==='blog'?d.blog:trendFilter==='insta'?d.insta:(d.blog+d.insta)));
+const chart=$('trend-chart');
+chart.innerHTML=trendData.map(d=>{
+const blogH=Math.max(8,Math.round(d.blog/maxVal*140));
+const instaH=Math.max(8,Math.round(d.insta/maxVal*140));
+if(trendFilter==='blog'){
+return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+<div style="flex:1;display:flex;align-items:flex-end;width:100%">
+<div class="trend-bar naver" style="height:${blogH}px;width:100%;border-radius:4px 4px 0 0" title="블로그 ${d.blog.toLocaleString()}"></div>
+</div>
+<div class="trend-day-label">${d.day}</div>
+</div>`;
+}else if(trendFilter==='insta'){
+return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+<div style="flex:1;display:flex;align-items:flex-end;width:100%">
+<div class="trend-bar insta" style="height:${instaH}px;width:100%;border-radius:4px 4px 0 0" title="인스타 ${d.insta.toLocaleString()}"></div>
+</div>
+<div class="trend-day-label">${d.day}</div>
+</div>`;
+}else{
+return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+<div class="trend-bar-group">
+<div class="trend-bar naver" style="height:${blogH}px" title="블로그 ${d.blog.toLocaleString()}"></div>
+<div class="trend-bar insta" style="height:${instaH}px" title="인스타 ${d.insta.toLocaleString()}"></div>
+</div>
+<div class="trend-day-label">${d.day}</div>
+</div>`;
+}
+}).join('');
+}
+
+function rDash(){
+// 핵심 지표 (이미 HTML에 기본값 세팅)
+const totalViews=trendData.reduce((s,d)=>s+d.blog+d.insta,0);
+$('hero-views-val').textContent=totalViews.toLocaleString();
+$('hero-posts-val').textContent='48';
+
+// 트렌드 차트 렌더
+renderTrend();
+
+// 플랫폼별 성과 카드
+const platformData=[
+{
+id:'naver',
+name:'네이버 블로그',
+logo:'<span class="p-logo naver"></span>',
+views:12400,
+reach:15800,
+engage:15.2,
+ctr:4.2,
+credits:85,
+posts:42
+},
+{
+id:'insta',
+name:'인스타그램',
+logo:'<span class="p-logo ig"></span>',
+views:8300,
+reach:11200,
+engage:18.7,
+ctr:3.1,
+credits:62,
+posts:38
+},
+{
+id:'facebook',
+name:'페이스북',
+logo:'<span class="p-logo fbk"></span>',
+views:4100,
+reach:5900,
+engage:9.4,
+ctr:2.8,
+credits:45,
+posts:28
+},
+{
+id:'homepage',
+name:'홈페이지',
+logo:'🏠',
+views:3200,
+reach:4100,
+engage:8.6,
+ctr:5.2,
+credits:28,
+posts:18
+}
+];
+
+let cardsHTML='';
+platformData.forEach(p=>{
+// 크레딧 효율: 1크레딧당 비용 (총 API비용/글 수) → 글 1개당 약 ₩12 기준
+const costPerPost=Math.round(p.credits*12/p.posts);
+const costPerView=Math.round(p.credits*12/p.views*1000);
+const roi=Math.round(p.views/p.posts);
+// 등급 산정: 게시물당 조회수 기준
+const grade=roi>=300?'S':roi>=200?'A':roi>=130?'B':'C';
+const gradeLabel=roi>=300?'최고':roi>=200?'우수':roi>=130?'보통':'개선필요';
+cardsHTML+=`<div class="platform-card ${p.id}">
+<div class="pc-header">
+<div class="pc-title"><div class="pc-logo">${p.logo}</div><span>${p.name}</span></div>
+<span class="badge ${p.engage>12?'good':'neutral'}" style="font-size:.65em">${p.posts}개</span>
+</div>
+<div class="pc-row"><span class="pc-row-label">조회수</span><span class="pc-row-val accent">${(p.views/1000).toFixed(1)}K</span></div>
+<div class="pc-row"><span class="pc-row-label">참여율</span><span class="pc-row-val">${p.engage}%</span></div>
+<div class="pc-row"><span class="pc-row-label">클릭률</span><span class="pc-row-val">${p.ctr}%</span></div>
+<div class="pc-row"><span class="pc-row-label">도달수</span><span class="pc-row-val">${(p.reach/1000).toFixed(1)}K</span></div>
+<div class="pc-eff-bar">
+<div class="pc-eff-row">
+<span class="pc-grade ${grade.toLowerCase()}">${grade}</span>
+<div>
+<div style="font-size:.78em;font-weight:600;color:var(--t1)">글당 ${roi}회 조회</div>
+<div class="pc-cost">₩${costPerView}/1K뷰 · 글당 ₩${costPerPost}</div>
+</div>
+</div>
+</div>
+</div>`;
+});
+$('platform-cards').innerHTML=cardsHTML;
+
+// 플랫폼 비교 차트
+let platHTML='';
+platformData.forEach(p=>{
+const viewPct=Math.round(p.views/280);
+platHTML+=`<div class="progress-row">
+<div class="progress-label">
+<div style="display:flex;align-items:center;gap:8px">
+<div style="width:10px;height:10px;border-radius:50%;background:${p.id==='naver'?'#03C75A':p.id==='insta'?'#E4405F':p.id==='facebook'?'#1877F2':'var(--ac)'}"></div>
+<b>${p.name}</b>
+</div>
+<span style="color:var(--ac);font-weight:600">${p.views.toLocaleString()}</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" style="width:${viewPct}%;background:${p.id==='naver'?'#03C75A':p.id==='insta'?'#E4405F':p.id==='facebook'?'#1877F2':'var(--ac)'}"></div>
+</div>
+</div>`;
+});
+$('platform-performance').innerHTML=platHTML;
+
+// AI 인사이트
+$('ai-insight').innerHTML='현재 <b style="color:#03C75A">네이버 블로그</b>가 가장 높은 크레딧 효율(146 조회/크레딧)을 보이고 있습니다. <b style="color:var(--ac)">추천 키워드</b>를 콘텐츠에 적극 활용하면 <b style="color:var(--g)">+45%</b> 참여율 향상이 예상됩니다. 홈페이지의 CTR이 5.2%로 높아 랜딩 페이지 최적화가 잘 되어있으며, 개선 포인트의 레퍼런스 기능을 활용하여 약점을 보완하세요.';
+
+// 강점
+const strengths=[
+'네이버 블로그 효율 최고 (146 조회/크레딧)',
+'인스타그램 참여율 우수 (18.7%)',
+'일관된 게시 주기 (주 3-4회)',
+'홈페이지 CTR 높음 (5.2%)'
+];
+$('strength-list').innerHTML=strengths.map(s=>`<div class="strength-item">${s}</div>`).join('');
+
+// 약점
+const weaknesses=[
+'페이스북 참여율 낮음 (9.4%)',
+'주말 활동 부족 (토일 50% 감소)',
+'홈페이지 조회수 개선 필요',
+'전체 도달률 향상 필요'
+];
+$('weakness-list').innerHTML=weaknesses.map(w=>`<div class="strength-item weak">${w}</div>`).join('');
+
+// 키워드
+const keywords=[
+{kw:'LED전광판',score:95,trend:'상승'},
+{kw:'옥외광고',score:92,trend:'상승'},
+{kw:'디지털사이니지',score:88,trend:'유지'},
+{kw:'전광판설치',score:85,trend:'상승'},
+{kw:'광고효과',score:82,trend:'유지'},
+{kw:'브랜딩',score:78,trend:'하락'},
+{kw:'방송중계',score:75,trend:'상승'},
+{kw:'이벤트',score:72,trend:'유지'}
+];
+$('keyword-grid').innerHTML=keywords.map(k=>{
+const emoji=k.trend==='상승'?'📈':k.trend==='하락'?'📉':'➡️';
+return `<div class="kw-pill">
+<span>${k.kw}</span>
+<span class="kw-score">${k.score}</span>
+<span>${emoji}</span>
+</div>`;
+}).join('');
+
+// 추천 키워드 초기화
+const recKeywords=[
+{kw:'LED전광판 시공',score:97,reason:'검색량 높고 경쟁 낮음',type:'핵심'},
+{kw:'전광판 렌탈 가격',score:93,reason:'구매 의도 키워드',type:'전환'},
+{kw:'옥외광고 효과',score:90,reason:'정보 탐색 단계 유입',type:'유입'},
+{kw:'디지털 사이니지 설치',score:87,reason:'B2B 타겟 정확',type:'핵심'},
+{kw:'LED스크린 렌탈',score:84,reason:'이벤트 시즌 수요↑',type:'시즌'},
+{kw:'방송중계 장비',score:81,reason:'전문성 어필 키워드',type:'브랜딩'}
+];
+$('recommended-keyword-grid').innerHTML=recKeywords.map(k=>{
+const typeColor=k.type==='핵심'?'var(--ac)':k.type==='전환'?'var(--g)':k.type==='유입'?'var(--b)':k.type==='시즌'?'#facc15':'var(--t2)';
+return `<div class="kw-pill" onclick="useKeyword('${k.kw}')" title="${k.reason}">
+<span style="font-size:.65em;padding:2px 6px;border-radius:8px;background:${typeColor}22;color:${typeColor};font-weight:600">${k.type}</span>
+<span>${k.kw}</span>
+<span class="kw-score">${k.score}</span>
+</div>`;
+}).join('');
+
+// 인기 키워드 초기화
+const popKeywords=[
+{kw:'LED전광판',score:95,trend:'상승',vol:'12,400'},
+{kw:'옥외광고',score:92,trend:'상승',vol:'8,700'},
+{kw:'디지털사이니지',score:88,trend:'유지',vol:'5,200'},
+{kw:'전광판설치',score:85,trend:'상승',vol:'4,800'},
+{kw:'광고효과분석',score:82,trend:'상승',vol:'3,600'},
+{kw:'브랜딩전략',score:78,trend:'하락',vol:'6,100'},
+{kw:'방송중계서비스',score:75,trend:'상승',vol:'2,900'},
+{kw:'이벤트영상',score:72,trend:'유지',vol:'3,400'}
+];
+$('popular-keyword-grid').innerHTML=popKeywords.map(k=>{
+const emoji=k.trend==='상승'?'📈':k.trend==='하락'?'📉':'➡️';
+return `<div class="kw-pill" onclick="useKeyword('${k.kw}')" title="월간 검색량: ${k.vol}">
+<span>${k.kw}</span>
+<span class="kw-score">${k.score}</span>
+<span>${emoji}</span>
+<span style="font-size:.65em;color:var(--t3)">${k.vol}</span>
+</div>`;
+}).join('');
+
+// 내 글 키워드 순위 초기화
+const rankData=[
+{kw:'LED전광판 시공',platform:'naver',rank:3,prev:5,best:2,post:'2024 코엑스 시공사례'},
+{kw:'방송중계 장비',platform:'naver',rank:7,prev:8,best:5,post:'방송중계 시스템 소개'},
+{kw:'전광판 렌탈',platform:'naver',rank:12,prev:10,best:8,post:'전광판 렌탈 가이드'},
+{kw:'옥외광고 효과',platform:'google',rank:18,prev:22,best:15,post:'옥외광고 ROI 분석'},
+{kw:'LED전광판',platform:'insta',rank:5,prev:5,best:3,post:'현장 시공 릴스'},
+{kw:'디지털사이니지',platform:'naver',rank:24,prev:20,best:18,post:'디지털사이니지 트렌드'}
+];
+function renderRankTable(data){
+$('rank-tbody').innerHTML=(data||rankData).map(r=>{
+const diff=r.prev-r.rank;
+const changeClass=diff>0?'up':diff<0?'down':'same';
+const changeText=diff>0?'▲'+diff:diff<0?'▼'+Math.abs(diff):'-';
+const rankClass=r.rank<=5?'top':r.rank<=15?'mid':'low';
+const platIcon=r.platform==='naver'?'<span class="p-logo naver" style="width:16px;height:16px;border-radius:4px;font-size:9px"></span>':r.platform==='insta'?'<span class="p-logo ig" style="width:16px;height:16px;border-radius:4px"></span>':'<span style="font-size:.8em">🔍</span>';
+return `<tr>
+<td style="font-weight:600;color:var(--t1)">${r.kw}</td>
+<td>${platIcon}</td>
+<td><span class="rank-num ${rankClass}">${r.rank}위</span></td>
+<td><span class="rank-change ${changeClass}">${changeText}</span></td>
+<td style="color:var(--t3)">${r.best}위</td>
+<td style="font-size:.72em;color:var(--t3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.post}">${r.post}</td>
+</tr>`;
+}).join('');
+}
+renderRankTable();
+
+// 키워드 추가
+function addTrackKeyword(){
+const kw=$('rank-kw-input').value.trim();
+const plat=$('rank-platform').value;
+if(!kw){toast('⚠️ 키워드를 입력하세요');$('rank-kw-input').focus();return}
+rankData.push({kw:kw,platform:plat,rank:'—',prev:'—',best:'—',post:'(조회 필요)'});
+renderRankTable();
+$('rank-kw-input').value='';
+toast('✅ "'+kw+'" 추적 목록에 추가됨');
+}
+
+// AI 순위 조회
+async function checkMyRanking(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('🔍 키워드 순위 분석 중...');
+try{
+const kwList=rankData.map(r=>r.kw).join(', ');
+const r=await callAI(`LED전광판/옥외광고/방송중계 업체의 블로그 키워드 순위를 분석해줘.
+
+추적 키워드: ${kwList}
+
+각 키워드별로 다음 형식으로 답해줘:
+키워드 | 예상순위(1-50) | 순위변동(상승/하락/유지, 몇단계) | 순위 올리기 팁 한줄
+
+마지막에 "💡 종합:" 으로 가장 시급한 개선이 필요한 키워드와 전략 2줄.`);
+const lines=r.split('\n').filter(l=>l.trim());
+let analysisText='';
+lines.forEach(line=>{
+const parts=line.split('|');
+if(parts.length>=3){
+const kw=parts[0].trim();
+const match=rankData.find(d=>kw.includes(d.kw)||d.kw.includes(kw));
+if(match){
+const newRank=parseInt(parts[1].trim())||match.rank;
+match.prev=match.rank!=='—'?match.rank:newRank;
+match.rank=newRank;
+if(match.best==='—'||newRank<match.best)match.best=newRank;
+}
+}else if(line.includes('종합')||line.includes('💡')){
+analysisText+=line.trim()+'\n';
+}
+});
+renderRankTable();
+if(analysisText.trim()){
+$('rank-analysis').innerHTML='<b>'+analysisText.trim().replace(/\n/g,'<br>')+'</b>';
+$('rank-detail').style.display='block';
+}
+toast('✅ 순위 분석 완료');
+}catch(e){toast('❌ '+e.message)}}
+
+// 경쟁사 비교
+const comparisons=[
+{metric:'평균 조회수',ours:189,theirs:168,good:true},
+{metric:'참여율',ours:12.3,theirs:8.9,good:true},
+{metric:'게시 빈도',ours:3.5,theirs:2.3,good:true},
+{metric:'동영상 비율',ours:18,theirs:42,good:false}
+];
+$('competitor-compare').innerHTML=comparisons.map(c=>{
+const diff=Math.round((c.ours-c.theirs)/c.theirs*100);
+const badge=c.good?(diff>0?'good':'bad'):(diff<0?'good':'bad');
+return `<div class="compare-row">
+<div class="compare-label">${c.metric}</div>
+<div class="compare-values">
+<span class="compare-theirs">경쟁사: ${c.theirs}</span>
+<span class="compare-ours">우리: ${c.ours}</span>
+<span class="badge ${badge}">${diff>0?'+':''}${diff}%</span>
+</div>
+</div>`;
+}).join('');
+}
+
+// 대시보드 새로고침
+function refreshDash(){
+const btn=$('dash-refresh-btn');
+btn.disabled=true;btn.innerHTML='<span class="spinner"></span>갱신 중...';
+// 약간의 랜덤 변동으로 실시간 느낌
+trendData.forEach(d=>{
+d.blog=Math.max(500,d.blog+Math.round((Math.random()-.4)*300));
+d.insta=Math.max(300,d.insta+Math.round((Math.random()-.4)*250));
+});
+setTimeout(()=>{
+rDash();
+btn.disabled=false;btn.innerHTML='🔄 새로고침';
+toast('✅ 대시보드 업데이트 완료');
+},800);
+}
+
+// AI 전체 분석
+async function analyzeAll(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('🤖 종합 분석 중...');
+try{
+const r=await callAI('SNS 콘텐츠 성과 데이터를 보고 3가지 핵심 인사이트와 구체적인 실행 방안을 제시. 플랫폼: 네이버블로그/인스타/페북/홈페이지. 업계: LED전광판/옥외광고. 강점: 네이버 효율 좋음, 인스타 참여율 높음. 약점: 페북 저조, 주말 부족. 간결하게 3-4문장.');
+$('ai-insight').innerHTML=r||'분석 완료';
+toast('✅ 분석 완료')
+}catch(e){toast('❌ '+e.message)}}
+
+// AI 키워드 추천
+async function getKeywords(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('✨ 키워드 생성 중...');
+try{
+const r=await callAI('LED전광판/옥외광고 업계 추천 키워드 8개를 리스트로 (점수 90-70). 각 줄마다 "키워드 | 점수 | 트렌드(상승/하락/유지)" 형식. 예: LED전광판 | 95 | 상승');
+const lines=r.split('\n').filter(l=>l.trim());
+let kwHTML='';
+lines.forEach(line=>{
+const parts=line.split('|');
+if(parts.length>=3){
+const kw=parts[0].trim();
+const score=parts[1].trim();
+const trend=parts[2].trim();
+const emoji=trend.includes('상승')?'📈':trend.includes('하락')?'📉':'➡️';
+kwHTML+=`<div class="kw-pill"><span>${kw}</span><span class="kw-score">${score}</span><span>${emoji}</span></div>`;
+}
+});
+if(kwHTML)$('keyword-grid').innerHTML=kwHTML;
+toast('✅ 생성 완료')
+}catch(e){toast('❌ '+e.message)}}
+
+// AI 추천 키워드 분석
+async function getRecommendedKeywords(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('🤖 키워드 분석 중...');
+try{
+const r=await callAI('LED전광판/옥외광고/방송중계 업계의 SNS 콘텐츠 키워드 전략을 분석해줘.\n\n다음을 포함:\n1) 현재 우리가 사용해야 할 핵심 키워드 6개 (각각 타입: 핵심/전환/유입/시즌/브랜딩 중 하나, 점수 70-100, 추천 이유 한 줄)\n형식: "키워드 | 점수 | 타입 | 이유"\n예: LED전광판 시공 | 97 | 핵심 | 검색량 높고 경쟁 낮음\n\n2) 키워드 조합 전략 한 단락 (어떤 키워드를 어떤 플랫폼에서 쓰면 좋은지)');
+const lines=r.split('\n').filter(l=>l.trim());
+let kwHTML='';let analysisText='';let inAnalysis=false;
+lines.forEach(line=>{
+const parts=line.split('|');
+if(parts.length>=4){
+const kw=parts[0].trim();const score=parts[1].trim();const type=parts[2].trim();const reason=parts[3].trim();
+const typeColor=type.includes('핵심')?'var(--ac)':type.includes('전환')?'var(--g)':type.includes('유입')?'var(--b)':type.includes('시즌')?'#facc15':'var(--t2)';
+kwHTML+=`<div class="kw-pill" onclick="useKeyword('${kw}')" title="${reason}">
+<span style="font-size:.65em;padding:2px 6px;border-radius:8px;background:${typeColor}22;color:${typeColor};font-weight:600">${type}</span>
+<span>${kw}</span>
+<span class="kw-score">${score}</span>
+</div>`;
+}else if(!line.includes('|')){analysisText+=line+'\n';inAnalysis=true}
+});
+if(kwHTML)$('recommended-keyword-grid').innerHTML=kwHTML;
+if(analysisText.trim()){$('rec-kw-analysis').innerHTML='<b>💡 키워드 전략:</b><br>'+analysisText.trim();$('rec-kw-detail').style.display='block'}
+toast('✅ AI 분석 완료')
+}catch(e){toast('❌ '+e.message)}}
+
+// 인기 키워드 새로고침
+async function getPopularKeywords(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('🔄 인기 키워드 조회 중...');
+try{
+const r=await callAI('LED전광판/옥외광고/방송중계 관련 현재 인기 검색 키워드 8개를 알려줘.\n형식: "키워드 | 인기점수(100점 만점) | 트렌드(상승/하락/유지) | 월간 예상 검색량"\n예: LED전광판 | 95 | 상승 | 12,400\n\n추가로 한 줄로 현재 트렌드 요약해줘.');
+const lines=r.split('\n').filter(l=>l.trim());
+let kwHTML='';let summaryText='';
+lines.forEach(line=>{
+const parts=line.split('|');
+if(parts.length>=4){
+const kw=parts[0].trim();const score=parts[1].trim();const trend=parts[2].trim();const vol=parts[3].trim();
+const emoji=trend.includes('상승')?'📈':trend.includes('하락')?'📉':'➡️';
+kwHTML+=`<div class="kw-pill" onclick="useKeyword('${kw}')" title="월간 검색량: ${vol}">
+<span>${kw}</span>
+<span class="kw-score">${score}</span>
+<span>${emoji}</span>
+<span style="font-size:.65em;color:var(--t3)">${vol}</span>
+</div>`;
+}else if(!line.includes('|')&&line.trim().length>5){summaryText=line.trim()}
+});
+if(kwHTML)$('popular-keyword-grid').innerHTML=kwHTML;
+if(summaryText){$('pop-kw-analysis').innerHTML='<b>📊 트렌드 요약:</b> '+summaryText;$('pop-kw-detail').style.display='block'}
+toast('✅ 업데이트 완료')
+}catch(e){toast('❌ '+e.message)}}
+
+// 키워드 활용 (클릭 시)
+function useKeyword(kw){
+const activeTab=document.querySelector('.tab-c.a');
+if(activeTab&&activeTab.id==='dash-tab'){
+navigator.clipboard.writeText(kw).then(()=>toast('📋 "'+kw+'" 복사됨 — 콘텐츠에 활용하세요!')).catch(()=>toast('키워드: '+kw))
+}}
+
+// 레퍼런스 찾기
+async function getReferences(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+const keyword=$('ref-keyword').value.trim();
+const platform=$('ref-platform').value;
+const platNames={blog:'네이버 블로그',insta:'인스타그램',fb:'페이스북',all:'전체 플랫폼'};
+if(!keyword){toast('⚠️ 키워드를 입력해주세요');$('ref-keyword').focus();return}
+const btn=$('ref-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>분석 중...';
+toast('📚 레퍼런스 분석 중...');
+try{
+const prompt=`LED전광판/옥외광고/방송중계 업계에서 "${keyword}" 주제로 ${platNames[platform]}에 올릴 콘텐츠를 위한 레퍼런스를 제공해줘.
+
+다음 형식으로 3개의 레퍼런스 콘텐츠 구조를 제안해줘:
+
+[레퍼런스 1]
+제목: (예시 제목)
+구조: (글의 흐름/구성 요약)
+핵심 전략: (왜 이 구조가 효과적인지)
+추천 키워드: (이 글에 녹일 키워드 3-5개)
+예상 성과: (이런 유형의 글이 보통 어떤 반응을 얻는지)
+
+[레퍼런스 2]
+...
+
+[레퍼런스 3]
+...
+
+마지막에 "💡 종합 제안:" 으로 3개 레퍼런스 중 가장 추천하는 것과 이유를 2줄로.`;
+const r=await callAI(prompt);
+
+// Parse and display references as cards
+let html='';
+const refs=r.split(/\[레퍼런스\s*\d+\]/g).filter(s=>s.trim());
+if(refs.length>0){
+html+='<div style="display:grid;gap:10px">';
+refs.forEach((ref,i)=>{
+const lines=ref.trim().split('\n').filter(l=>l.trim());
+if(lines.length<2)return;
+// Check if this is the summary line
+const isSummary=ref.includes('종합 제안');
+if(isSummary){
+html+=`<div class="tip-box" style="margin-top:4px">${ref.trim().replace(/\n/g,'<br>')}</div>`;
+return;
+}
+html+=`<div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--r2);padding:14px;border-left:3px solid ${i===0?'var(--ac)':i===1?'var(--b)':'var(--g)'}">
+<div style="font-size:.78em;color:var(--t3);margin-bottom:4px">레퍼런스 ${i+1}</div>
+<div style="font-size:.85em;color:var(--t2);line-height:1.7;white-space:pre-wrap">${ref.trim()}</div>
+<div style="margin-top:8px;display:flex;gap:4px">
+<button class="ebtn" onclick="applyReference(${i},'${keyword}')">📝 이 구조로 글쓰기</button>
+<button class="ebtn" onclick="navigator.clipboard.writeText(this.closest('div[style]').querySelector('div[style*=pre-wrap]').textContent).then(()=>toast('📋 복사됨'))">📋 복사</button>
+</div>
+</div>`;
+});
+html+='</div>';
+}else{
+html=`<div style="font-size:.85em;color:var(--t2);line-height:1.7;white-space:pre-wrap;padding:10px;background:var(--bg4);border-radius:var(--r2)">${r}</div>`;
+}
+$('ref-content').innerHTML=html;
+$('ref-results').style.display='block';
+toast('✅ 레퍼런스 분석 완료')
+}catch(e){toast('❌ '+e.message)}finally{btn.disabled=false;btn.innerHTML='🔍 레퍼런스 찾기'}}
+
+// 레퍼런스 구조를 콘텐츠 탭에 적용
+function applyReference(idx,keyword){
+const activeNav=document.querySelector('.nav-i.a');
+const currentTab=activeNav?activeNav.dataset.t:'blog';
+if(currentTab==='blog'||currentTab==='dash'){
+go('blog');
+$('b-event').value=keyword;
+toast('✅ 블로그 탭에 키워드 적용됨 — 상세 내용을 입력하세요');
+}else if(currentTab==='insta'){
+$('i-content').value=keyword+' 관련 콘텐츠';
+toast('✅ 인스타 탭에 키워드 적용됨');
+}else if(currentTab==='fb'){
+$('f-content').value=keyword+' 관련 콘텐츠';
+toast('✅ 페이스북 탭에 키워드 적용됨');
+}}
+
+
+// === SMART PLACE ===
+function setSpMode(mode){
+document.querySelectorAll('#sp-pills .sub-pill').forEach(p=>p.classList.remove('a'));
+event.target.classList.add('a');
+$('sp-dashboard').style.display=mode==='dashboard'?'block':'none';
+$('sp-myplace').style.display=mode==='myplace'?'block':'none';
+$('sp-keyword').style.display=mode==='keyword'?'block':'none';
+$('sp-ranking').style.display=mode==='ranking'?'block':'none';
+if(mode==='myplace')updatePlacePreview();
+}
+
+// 유입 검색어 데이터
+const spSearchData=[
+{rank:1,kw:'LED전광판 설치',visits:342,pct:28.5,conv:12.3,trend:'up'},
+{rank:2,kw:'전광판 렌탈',visits:218,pct:18.2,conv:9.8,trend:'up'},
+{rank:3,kw:'방송중계 업체',visits:187,pct:15.6,conv:15.2,trend:'same'},
+{rank:4,kw:'옥외 전광판',visits:124,pct:10.3,conv:7.4,trend:'down'},
+{rank:5,kw:'LED스크린 대여',visits:98,pct:8.2,conv:11.1,trend:'up'},
+{rank:6,kw:'행사 영상장비',visits:72,pct:6.0,conv:8.9,trend:'same'},
+{rank:7,kw:'전광판 가격',visits:56,pct:4.7,conv:5.2,trend:'up'},
+{rank:8,kw:'강남 LED설치',visits:41,pct:3.4,conv:14.6,trend:'up'},
+{rank:9,kw:'방송장비 렌탈',visits:34,pct:2.8,conv:6.7,trend:'down'},
+{rank:10,kw:'영상중계 서비스',visits:28,pct:2.3,conv:10.5,trend:'same'}
+];
+
+function renderSpSearch(){
+$('sp-search-tbody').innerHTML=spSearchData.map(s=>{
+const trendIcon=s.trend==='up'?'<span class="rank-change up">▲</span>':s.trend==='down'?'<span class="rank-change down">▼</span>':'<span class="rank-change same">-</span>';
+const barW=Math.max(20,Math.round(s.pct/30*100));
+return `<tr>
+<td style="font-weight:600;color:var(--t3)">${s.rank}</td>
+<td style="font-weight:600;color:var(--t1)">${s.kw}</td>
+<td><span style="color:var(--ac);font-weight:600;font-family:var(--fm)">${s.visits}</span></td>
+<td><div style="display:flex;align-items:center;gap:6px"><div style="background:linear-gradient(90deg,#03C75A,#03C75A88);height:6px;width:${barW}%;border-radius:3px;min-width:15px"></div><span style="font-size:.8em">${s.pct}%</span></div></td>
+<td style="color:${s.conv>=10?'var(--g)':'var(--t2)'};font-weight:${s.conv>=10?'600':'400'}">${s.conv}%</td>
+<td>${trendIcon}</td>
+</tr>`;
+}).join('');
+}
+
+// 주간 행동 트렌드
+const spTrendData={
+views:[{day:'월',cur:320,prev:280},{day:'화',cur:380,prev:350},{day:'수',cur:290,prev:310},{day:'목',cur:420,prev:370},{day:'금',cur:360,prev:340},{day:'토',cur:280,prev:250},{day:'일',cur:290,prev:260}],
+calls:[{day:'월',cur:5,prev:4},{day:'화',cur:7,prev:5},{day:'수',cur:4,prev:6},{day:'목',cur:8,prev:5},{day:'금',cur:6,prev:7},{day:'토',cur:4,prev:3},{day:'일',cur:4,prev:3}]
+};
+let spTrendMode='views';
+
+function setSpTrend(mode){
+spTrendMode=mode;
+document.querySelectorAll('#sp-trend-tabs .trend-tab').forEach(t=>t.classList.remove('a'));
+event.target.classList.add('a');
+renderSpTrend();
+}
+
+function renderSpTrend(){
+const data=spTrendData[spTrendMode];
+const maxVal=Math.max(...data.map(d=>Math.max(d.cur,d.prev)));
+$('sp-trend-chart').innerHTML=data.map(d=>{
+const curH=Math.max(8,Math.round(d.cur/maxVal*140));
+const prevH=Math.max(8,Math.round(d.prev/maxVal*140));
+return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+<div class="trend-bar-group">
+<div class="trend-bar" style="height:${prevH}px;background:var(--bg4);border:1px solid var(--border)" title="지난주 ${d.prev}"></div>
+<div class="trend-bar" style="height:${curH}px;background:#03C75A" title="이번주 ${d.cur}"></div>
+</div>
+<div class="trend-day-label">${d.day}</div>
+</div>`;
+}).join('');
+}
+
+// 전환 퍼널
+function renderSpFunnel(){
+const funnel=[
+{name:'검색 노출',val:12400,color:'var(--t2)'},
+{name:'플레이스 클릭',val:2340,color:'#03C75A'},
+{name:'상세 정보 확인',val:1560,color:'var(--b)'},
+{name:'전화 연결',val:105,color:'var(--ac)'},
+{name:'실제 방문 (추정)',val:42,color:'var(--g)'}
+];
+const maxVal=funnel[0].val;
+$('sp-funnel').innerHTML=funnel.map((f,i)=>{
+const w=Math.max(25,Math.round(f.val/maxVal*100));
+const convRate=i>0?((f.val/funnel[i-1].val)*100).toFixed(1)+'%':'—';
+return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+<div style="width:100px;text-align:right;font-size:.78em;color:var(--t2);flex-shrink:0">${f.name}</div>
+<div style="flex:1;position:relative">
+<div style="background:${f.color};height:28px;width:${w}%;border-radius:6px;opacity:.75;display:flex;align-items:center;padding-left:10px">
+<span style="font-size:.78em;font-weight:600;color:#fff">${f.val.toLocaleString()}</span>
+</div>
+</div>
+<div style="width:45px;text-align:right;font-size:.72em;color:var(--t3);flex-shrink:0">${convRate}</div>
+</div>`;
+}).join('')+'<div style="text-align:right;font-size:.7em;color:var(--t3);margin-top:4px">← 단계별 전환율</div>';
+}
+
+function rSP(){
+renderSpSearch();
+renderSpTrend();
+renderSpFunnel();
+updatePlacePreview();
+}
+
+// 스마트플레이스 대시보드 새로고침
+function refreshSpDash(){
+const btn=$('sp-refresh-btn');
+btn.disabled=true;btn.innerHTML='<span class="spinner"></span>갱신 중...';
+// 데이터 변동
+spSearchData.forEach(s=>{
+s.visits=Math.max(10,s.visits+Math.round((Math.random()-.4)*30));
+s.conv=Math.max(1,parseFloat((s.conv+(Math.random()-.4)*2).toFixed(1)));
+});
+const totalVisits=spSearchData.reduce((a,b)=>a+b.visits,0);
+spSearchData.forEach(s=>s.pct=parseFloat((s.visits/totalVisits*100).toFixed(1)));
+Object.values(spTrendData).forEach(arr=>{
+arr.forEach(d=>{d.prev=d.cur;d.cur=Math.max(1,d.cur+Math.round((Math.random()-.4)*d.cur*0.15));});
+});
+const newViews=Math.round(2340+(Math.random()-.3)*400);
+const newCalls=Math.round(38+(Math.random()-.3)*10);
+setTimeout(()=>{
+$('sp-views').textContent=newViews.toLocaleString();
+$('sp-calls').textContent=newCalls;
+renderSpSearch();
+renderSpTrend();
+renderSpFunnel();
+btn.disabled=false;btn.innerHTML='🔄 새로고침';
+toast('✅ 플레이스 대시보드 업데이트 완료');
+},800);
+}
+
+// 플레이스 미리보기 업데이트
+function updatePlacePreview(){
+const name=$('mp-name').value||'업체명 미입력';
+const cat=$('mp-category').value;
+const phone=$('mp-phone').value||'—';
+const hours=$('mp-hours').value||'—';
+const addr=$('mp-addr').value||'—';
+const url=$('mp-url').value||'—';
+const desc=$('mp-desc').value||'소개를 입력해주세요';
+const services=$('mp-services').value;
+const tags=$('mp-tags').value;
+
+$('mp-prev-name').textContent=name;
+$('mp-prev-cat').textContent=cat;
+$('mp-prev-phone').textContent=phone;
+$('mp-prev-hours').textContent=hours;
+$('mp-prev-addr').textContent=addr;
+$('mp-prev-url').textContent=url.replace(/^https?:\/\//,'');
+$('mp-prev-desc').textContent=desc;
+
+// 서비스 태그
+if(services.trim()){
+$('mp-prev-services').innerHTML=services.split(',').map(s=>s.trim()).filter(s=>s).map(s=>
+`<span style="padding:4px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;font-size:.75em;color:var(--t1)">${s}</span>`
+).join('');
+}else{$('mp-prev-services').innerHTML='<span style="font-size:.75em;color:var(--t3)">서비스를 입력해주세요</span>'}
+
+// 키워드 태그
+if(tags.trim()){
+$('mp-prev-tags').innerHTML=tags.split(',').map(t=>t.trim()).filter(t=>t).map(t=>
+`<span style="padding:3px 8px;background:rgba(3,199,90,.08);border:1px solid rgba(3,199,90,.2);border-radius:12px;font-size:.7em;color:#03C75A">#${t}</span>`
+).join('');
+}else{$('mp-prev-tags').innerHTML='<span style="font-size:.75em;color:var(--t3)">키워드를 입력해주세요</span>'}
+
+// 이미지 미리보기
+const filledImg=document.querySelector('#mp-imgs .isl.filled img');
+if(filledImg){
+$('mp-prev-img').innerHTML='<img src="'+filledImg.src+'" style="width:100%;height:100%;object-fit:cover">';
+}
+}
+
+// AI 플레이스 프로필 진단
+async function diagnosePlaceProfile(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+const btn=$('mp-diag-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>진단 중...';
+const name=$('mp-name').value||'(미입력)';
+const cat=$('mp-category').value;
+const desc=$('mp-desc').value||'(미입력)';
+const services=$('mp-services').value||'(미입력)';
+const tags=$('mp-tags').value||'(미입력)';
+const addr=$('mp-addr').value||'(미입력)';
+const strength=$('mp-desc').value||'';
+toast('🤖 프로필 진단 중...');
+try{
+const r=await callAI(`네이버 스마트플레이스(플레이스) 프로필을 진단해줘.
+
+업체 정보:
+- 업체명: ${name}
+- 업종: ${cat}
+- 주소: ${addr}
+- 소개글: ${desc}
+- 서비스: ${services}
+- 키워드 태그: ${tags}
+
+다음을 분석해줘:
+1) 프로필 완성도 (100점 만점, 점수와 부족한 부분)
+2) 소개글 개선안 (검색 최적화된 버전으로 다시 작성)
+3) 키워드 태그 진단 (빠진 필수 키워드, 불필요한 키워드)
+4) 서비스/메뉴 등록 개선안
+5) 경쟁업체 대비 차별점을 부각시킬 수 있는 팁 2가지
+
+각 항목 2-3줄씩 간결하게.`);
+$('mp-diag-content').innerHTML='<b>🤖 AI 프로필 진단 결과</b><br><br>'+r.replace(/\n/g,'<br>');
+$('mp-diag-result').style.display='block';
+toast('✅ 진단 완료');
+}catch(e){toast('❌ '+e.message)}finally{
+btn.disabled=false;btn.innerHTML='🤖 AI 플레이스 프로필 진단';
+}}
+
+// 키워드 최적화 AI 분석
+async function analyzeSpKeywords(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+const btn=$('sp-kw-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>AI 분석 중...';
+const bizType=$('sp-biz-type').value;
+const area=$('sp-biz-area').value;
+const name=$('sp-biz-name').value||'(미입력)';
+const service=$('sp-biz-service').value||'(미입력)';
+const currentKw=$('sp-biz-current-kw').value||'(미등록)';
+const strength=$('sp-biz-strength').value||'(미입력)';
+toast('🤖 키워드 최적화 분석 중...');
+try{
+// 1) 추천 키워드
+const r1=await callAI(`네이버 플레이스(스마트플레이스) 키워드 최적화 분석을 해줘.
+
+업체 정보:
+- 업종: ${bizType}
+- 지역: ${area}
+- 업체명: ${name}
+- 주요 서비스: ${service}
+- 현재 등록 키워드: ${currentKw}
+- 강점: ${strength}
+
+1) 플레이스에 반드시 추가해야 할 추천 키워드 10개를 알려줘.
+형식: "키워드 | 우선순위(필수/추천/보조) | 예상 월 검색량 | 추천 이유"
+예: LED전광판 설치 | 필수 | 3,200 | 핵심 서비스 키워드
+
+2) 현재 키워드(${currentKw}) 진단: 빠진 키워드, 불필요한 키워드, 개선점을 3줄로.
+
+구분자 "---" 로 1)과 2)를 나눠줘.`);
+
+const parts=r1.split('---');
+const kwPart=parts[0]||r1;
+const diagPart=parts[1]||'';
+
+// 추천 키워드 파싱
+const kwLines=kwPart.split('\n').filter(l=>l.includes('|'));
+let kwHTML='<div style="display:grid;gap:6px">';
+kwLines.forEach(line=>{
+const p=line.split('|');
+if(p.length>=3){
+const kw=p[0].trim().replace(/^\d+[\.\)]\s*/,'');
+const priority=p[1].trim();
+const vol=p[2].trim();
+const reason=p[3]?p[3].trim():'';
+const pColor=priority.includes('필수')?'var(--ac)':priority.includes('추천')?'var(--g)':'var(--b)';
+const pBg=priority.includes('필수')?'rgba(249,115,22,.12)':priority.includes('추천')?'rgba(52,211,153,.12)':'rgba(96,165,250,.12)';
+kwHTML+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg4);border-radius:var(--r2);border-left:3px solid ${pColor}">
+<span style="font-size:.7em;padding:2px 8px;border-radius:8px;background:${pBg};color:${pColor};font-weight:600;flex-shrink:0">${priority}</span>
+<span style="font-weight:600;color:var(--t1);flex:1">${kw}</span>
+<span style="font-size:.75em;color:var(--t3);flex-shrink:0">검색 ${vol}</span>
+<button class="ebtn" onclick="navigator.clipboard.writeText('${kw.replace(/'/g,"\\'")}').then(()=>toast('📋 복사됨'))" style="flex-shrink:0">복사</button>
+</div>`;
+}
+});
+kwHTML+='</div>';
+$('sp-rec-keywords').innerHTML=kwHTML;
+$('sp-kw-diagnosis').textContent=diagPart.trim()||'진단 결과를 불러오는 중...';
+
+// 2) 키워드 전략
+const r2=await callAI(`${area}에서 ${bizType} 업종의 네이버 플레이스 키워드 전략을 알려줘.
+
+1) 카테고리별 키워드 배치 전략 (업체 소개, 메뉴/서비스, 태그 각각에 어떤 키워드를 넣을지)
+2) 경쟁업체와 차별화할 수 있는 틈새 키워드 3개
+3) 계절/시기별 추가해야 할 키워드
+4) 피해야 할 키워드 (과도한 키워드 스터핑 등)
+
+각 항목 2-3줄로 간결하게.`);
+$('sp-kw-strategy').textContent=r2||'';
+
+$('sp-kw-results').style.display='block';
+toast('✅ 분석 완료');
+}catch(e){toast('❌ '+e.message)}finally{
+btn.disabled=false;btn.innerHTML='🤖 AI 키워드 최적화 분석';
+}}
+
+// 유입 검색어 AI 새로고침
+async function refreshSpKeywords(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+toast('🔄 검색어 분석 중...');
+try{
+const r=await callAI(`LED전광판/방송중계 업체의 네이버 플레이스 유입 검색어 TOP 10을 실제적으로 시뮬레이션해줘.
+형식: "순위 | 검색어 | 유입수 | 비율(%) | 전환율(%) | 추이(up/down/same)"
+예: 1 | LED전광판 설치 | 342 | 28.5 | 12.3 | up`);
+const lines=r.split('\n').filter(l=>l.includes('|'));
+const newData=[];
+lines.forEach((line,i)=>{
+const p=line.split('|');
+if(p.length>=5){
+newData.push({
+rank:i+1,
+kw:p[1].trim(),
+visits:parseInt(p[2].trim())||0,
+pct:parseFloat(p[3].trim())||0,
+conv:parseFloat(p[4].trim())||0,
+trend:(p[5]||'same').trim()
+});
+}
+});
+if(newData.length>0){
+spSearchData.length=0;
+newData.forEach(d=>spSearchData.push(d));
+renderSpSearch();
+}
+toast('✅ 업데이트 완료');
+}catch(e){toast('❌ '+e.message)}}
+
+// 지역 순위 조회
+async function checkSpRanking(){
+if(!apiKey){toast('⚠️ API 키 필요');showM('m-api');return}
+const kw=$('sp-rank-kw').value.trim();
+const area=$('sp-rank-area').value;
+if(!kw){toast('⚠️ 키워드를 입력하세요');$('sp-rank-kw').focus();return}
+const btn=$('sp-rank-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>조회 중...';
+toast('🏆 순위 분석 중...');
+try{
+const r=await callAI(`"${kw}" 키워드로 "${area}" 지역에서 네이버 플레이스 검색 시 나올 수 있는 업체 순위를 시뮬레이션해줘.
+
+1) 상위 10개 업체 리스트:
+형식: "순위 | 업체명 | 평점 | 리뷰수 | 강점키워드"
+내 업체(LED전광판 전문업체)를 3~8위 사이에 배치하고 "(내 업체)" 표시해줘.
+
+2) 내 업체의 순위와 총 경쟁업체 수를 알려줘.
+형식: "내순위: N위 | 총업체: M개"
+
+3) 순위를 올리기 위한 구체적 전략 3가지 (각 1-2줄)
+
+구분자 "---" 로 나눠줘.`);
+
+const parts=r.split('---');
+
+// 순위 테이블
+const tablePart=parts[0]||'';
+const lines=tablePart.split('\n').filter(l=>l.includes('|'));
+let myRank='—';let totalBiz='—';
+$('sp-rank-tbody').innerHTML=lines.map(line=>{
+const p=line.split('|');
+if(p.length<4)return '';
+const rank=p[0].trim().replace(/[^\d]/g,'');
+const name=p[1].trim();
+const rating=p[2].trim();
+const reviews=p[3].trim();
+const tags=p[4]?p[4].trim():'';
+const isMe=name.includes('내 업체')||name.includes('우리');
+if(isMe)myRank=rank;
+return `<tr style="${isMe?'background:rgba(249,115,22,.08);':''}">
+<td><span class="rank-num ${parseInt(rank)<=3?'top':parseInt(rank)<=7?'mid':'low'}">${rank}</span></td>
+<td style="font-weight:600;color:${isMe?'var(--ac)':'var(--t1)'}">${name}</td>
+<td>${rating}</td>
+<td>${reviews}</td>
+<td style="font-size:.72em;color:var(--t3)">${tags}</td>
+</tr>`;
+}).join('');
+
+// 메타 정보
+const metaPart=parts[1]||'';
+const metaMatch=metaPart.match(/총업체[:\s]*(\d+)/);
+if(metaMatch)totalBiz=metaMatch[1];
+if(myRank==='—'){const rm=metaPart.match(/내순위[:\s]*(\d+)/);if(rm)myRank=rm[1];}
+
+$('sp-my-rank').textContent=myRank!=='—'?myRank+'위':'—';
+$('sp-my-rank-sub').textContent=`"${kw}" 검색 기준 (${area})`;
+$('sp-total-biz').textContent=totalBiz!=='—'?totalBiz+'개':'약 45개';
+$('sp-total-biz-sub').textContent=`${area} 동일 업종`;
+
+// 전략
+const stratPart=parts[2]||'';
+if(stratPart.trim()){
+$('sp-rank-analysis').textContent=stratPart.trim();
+$('sp-rank-analysis-box').style.display='block';
+}
+
+// 키워드별 순위 추적에 추가
+addRankHistory(kw,area,myRank);
+
+toast('✅ 순위 조회 완료');
+}catch(e){toast('❌ '+e.message)}finally{
+btn.disabled=false;btn.innerHTML='🏆 순위 조회';
+}}
+
+// 순위 추적 히스토리
+const spRankHistory=[];
+function addRankHistory(kw,area,rank){
+const existing=spRankHistory.find(h=>h.kw===kw&&h.area===area);
+if(existing){
+existing.prev=existing.rank;
+existing.rank=parseInt(rank)||'—';
+}else{
+spRankHistory.push({kw,area,rank:parseInt(rank)||'—',prev:'—',month:parseInt(rank)+Math.floor(Math.random()*5)-2||'—',target:Math.max(1,(parseInt(rank)||5)-3)});
+}
+renderRankHistory();
+}
+
+function renderRankHistory(){
+$('sp-rank-history').innerHTML=spRankHistory.map(h=>{
+const diff=h.prev!=='—'&&h.rank!=='—'?h.prev-h.rank:0;
+const changeClass=diff>0?'up':diff<0?'down':'same';
+const changeText=diff>0?'▲'+diff:diff<0?'▼'+Math.abs(diff):'—';
+const rankClass=h.rank!=='—'?(h.rank<=5?'top':h.rank<=10?'mid':'low'):'';
+return `<tr>
+<td style="font-weight:600;color:var(--t1)">${h.kw}</td>
+<td style="font-size:.8em;color:var(--t3)">${h.area}</td>
+<td><span class="rank-num ${rankClass}">${h.rank!=='—'?h.rank+'위':'—'}</span></td>
+<td><span class="rank-change ${changeClass}">${changeText}</span></td>
+<td style="color:var(--t3)">${h.month!=='—'?h.month+'위':'—'}</td>
+<td style="color:var(--g);font-weight:600">${h.target}위</td>
+</tr>`;
+}).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:16px">키워드 순위를 조회하면 자동으로 추적됩니다</td></tr>';
+}
+
+// === INIT ===
+initMnav();rOOH();rOOHT();rDash();rSP();renderRankHistory();renderStyleDash();renderCmpHistory();renderKwrRecent();renderKwrSaved();
+if(!apiKey)setTimeout(()=>showM('m-api'),1200);
+</script></body></html>
