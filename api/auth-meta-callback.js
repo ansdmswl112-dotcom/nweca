@@ -25,30 +25,44 @@ module.exports = async (req, res) => {
     const accessToken = tokenData.access_token;
 
     // 사용자 프로필
-    const profileRes = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name,email,picture&access_token=${accessToken}`);
+    const profileRes = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=${accessToken}`);
     const profile = await profileRes.json();
 
-    // 인스타그램 비즈니스 계정 찾기
-    const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account{id,username,followers_count,media_count}&access_token=${accessToken}`);
-    const pages = await pagesRes.json();
+    // 페이지 목록 가져오기
+    let pages = { data: [] };
+    try {
+      const pagesRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,access_token,category&access_token=${accessToken}`);
+      pages = await pagesRes.json();
+    } catch (e) {
+      console.error('Pages fetch error:', e.message);
+    }
 
-    const igAccounts = (pages.data || [])
-      .filter(p => p.instagram_business_account)
-      .map(p => ({
-        pageId: p.id,
-        pageName: p.name,
-        igId: p.instagram_business_account.id,
-        igUsername: p.instagram_business_account.username,
-        followers: p.instagram_business_account.followers_count,
-        mediaCount: p.instagram_business_account.media_count
-      }));
+    // 페이지별 최근 게시물 가져오기
+    let fbPosts = [];
+    if (pages.data && pages.data.length > 0) {
+      try {
+        const pageToken = pages.data[0].access_token || accessToken;
+        const pageId = pages.data[0].id;
+        const postsRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}/posts?fields=id,message,created_time,likes.summary(true),comments.summary(true),shares&limit=5&access_token=${pageToken}`);
+        const postsData = await postsRes.json();
+        fbPosts = (postsData.data || []).map(p => ({
+          id: p.id,
+          message: (p.message || '').substring(0, 100),
+          created: p.created_time,
+          likes: p.likes?.summary?.total_count || 0,
+          comments: p.comments?.summary?.total_count || 0,
+          shares: p.shares?.count || 0
+        }));
+      } catch (e) {
+        console.error('FB posts fetch error:', e.message);
+      }
+    }
 
     // Supabase에 유저 저장/업데이트
     let dbUserId = null;
     const sb = getSupabase();
     if (sb) {
       try {
-        const igId = igAccounts.length > 0 ? igAccounts[0].igId : null;
         const { data: existing } = await sb
           .from('users')
           .select('id')
@@ -59,11 +73,9 @@ module.exports = async (req, res) => {
         if (existing) {
           await sb.from('users').update({
             name: profile.name || '',
-            email: profile.email || '',
             profile_image: profile.picture?.data?.url || '',
             meta_token: accessToken,
             meta_pages: pages.data || [],
-            instagram_id: igId,
             last_login: new Date().toISOString()
           }).eq('id', existing.id);
           dbUserId = existing.id;
@@ -72,11 +84,9 @@ module.exports = async (req, res) => {
             provider: 'meta',
             provider_id: profile.id || '',
             name: profile.name || '',
-            email: profile.email || '',
             profile_image: profile.picture?.data?.url || '',
             meta_token: accessToken,
-            meta_pages: pages.data || [],
-            instagram_id: igId
+            meta_pages: pages.data || []
           }).select('id').single();
           dbUserId = created?.id || null;
         }
@@ -89,10 +99,9 @@ module.exports = async (req, res) => {
       token: accessToken,
       id: profile.id || '',
       name: profile.name || '',
-      email: profile.email || '',
       profileImage: profile.picture?.data?.url || '',
       pages: pages.data || [],
-      instagram: igAccounts,
+      fbPosts: fbPosts,
       dbUserId: dbUserId
     };
 
