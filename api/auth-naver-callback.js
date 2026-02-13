@@ -31,6 +31,35 @@ module.exports = async (req, res) => {
     const profileData = await profileRes.json();
     const profile = profileData.response || {};
 
+    // 블로그 URL 자동 생성 (네이버 ID 기반)
+    const naverId = profile.id || '';
+    const blogUrl = naverId ? `https://blog.naver.com/${naverId}` : '';
+
+    // 블로그 최근 글 가져오기
+    let blogPosts = [];
+    let blogTotal = 0;
+    if (naverId) {
+      try {
+        const blogSearchUrl = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(naverId)}&display=5&sort=date`;
+        const blogRes = await fetch(blogSearchUrl, {
+          headers: {
+            'X-Naver-Client-Id': clientId,
+            'X-Naver-Client-Secret': clientSecret
+          }
+        });
+        const blogData = await blogRes.json();
+        blogTotal = blogData.total || 0;
+        blogPosts = (blogData.items || []).map(item => ({
+          title: item.title.replace(/<[^>]*>/g, ''),
+          link: item.link,
+          description: item.description.replace(/<[^>]*>/g, '').substring(0, 100),
+          postdate: item.postdate
+        }));
+      } catch (e) {
+        console.error('Blog fetch error:', e.message);
+      }
+    }
+
     // Supabase에 유저 저장/업데이트
     let dbUserId = null;
     const sb = getSupabase();
@@ -40,7 +69,7 @@ module.exports = async (req, res) => {
           .from('users')
           .select('id')
           .eq('provider', 'naver')
-          .eq('provider_id', profile.id || '')
+          .eq('provider_id', naverId)
           .single();
 
         if (existing) {
@@ -55,7 +84,7 @@ module.exports = async (req, res) => {
         } else {
           const { data: created } = await sb.from('users').insert({
             provider: 'naver',
-            provider_id: profile.id || '',
+            provider_id: naverId,
             name: profile.name || profile.nickname || '',
             email: profile.email || '',
             profile_image: profile.profile_image || '',
@@ -68,14 +97,17 @@ module.exports = async (req, res) => {
       }
     }
 
-    // 프론트엔드로 토큰과 프로필 전달
+    // 프론트엔드로 모든 데이터 전달
     const userData = {
       token: accessToken,
-      id: profile.id || '',
+      id: naverId,
       name: profile.name || profile.nickname || '',
       email: profile.email || '',
       profileImage: profile.profile_image || '',
-      dbUserId: dbUserId
+      dbUserId: dbUserId,
+      blogUrl: blogUrl,
+      blogPosts: blogPosts,
+      blogTotal: blogTotal
     };
 
     res.setHeader('Content-Type', 'text/html');
