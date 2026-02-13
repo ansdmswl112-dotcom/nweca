@@ -1,17 +1,26 @@
-module.exports = (req, res) => {
+const { getSupabase } = require('./supabase-client');
+
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  
-  const status = {
-    naver: !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET),
-    meta: !!process.env.META_ACCESS_TOKEN,
-    serpapi: !!process.env.SERPAPI_KEY,
-    anthropic: !!process.env.ANTHROPIC_API_KEY
-  };
+
+  let dbStatus = false;
+  const sb = getSupabase();
+  if (sb) {
+    try {
+      const { count, error } = await sb.from('users').select('*', { count: 'exact', head: true });
+      dbStatus = !error;
+    } catch (e) { dbStatus = false; }
+  }
 
   res.json({
-    ok: true,
-    message: 'SNS Content Backend API',
-    apis: status,
-    timestamp: new Date().toISOString()
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    apis: {
+      naver: !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET),
+      meta: !!(process.env.META_APP_ID && process.env.META_APP_SECRET),
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+      serp: !!process.env.SERPAPI_KEY,
+      supabase: dbStatus
+    }
   });
 };
