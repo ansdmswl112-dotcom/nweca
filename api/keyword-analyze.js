@@ -262,6 +262,33 @@ module.exports = async (req, res) => {
       } catch (e) { console.error('Facebook error:', e.message); }
     }
 
+    // ========== ⑥ SerpAPI 폴백 (Meta API 미작동시) ==========
+    var serpApiKey = process.env.SERPAPI_KEY;
+    if (serpApiKey && results.summary.instagramTotal === 0) {
+      try {
+        var instaRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:instagram.com&hl=ko&gl=kr&num=5&api_key=' + serpApiKey);
+        var instaData = await instaRes.json();
+        results.content.instagram = (instaData.organic_results || []).slice(0, 5).map(function(item, i) {
+          var username = '';
+          try { var match = item.link.match(/instagram\.com\/([^\/\?]+)/); if (match) username = '@' + match[1]; } catch(e) {}
+          return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: username || 'Instagram', position: i + 1 };
+        });
+        results.summary.instagramTotal = (instaData.search_information && instaData.search_information.total_results) || results.content.instagram.length;
+      } catch (e) { console.error('SerpAPI Instagram error:', e.message); }
+    }
+    if (serpApiKey && results.summary.facebookTotal === 0) {
+      try {
+        var fbSerpRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:facebook.com&hl=ko&gl=kr&num=5&api_key=' + serpApiKey);
+        var fbSerpData = await fbSerpRes.json();
+        results.content.facebook = (fbSerpData.organic_results || []).slice(0, 5).map(function(item, i) {
+          var pageName = '';
+          try { var match = item.link.match(/facebook\.com\/([^\/\?]+)/); if (match) pageName = match[1]; } catch(e) {}
+          return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: pageName || 'Facebook', position: i + 1 };
+        });
+        results.summary.facebookTotal = (fbSerpData.search_information && fbSerpData.search_information.total_results) || results.content.facebook.length;
+      } catch (e) { console.error('SerpAPI Facebook error:', e.message); }
+    }
+
     // ========== 총량 계산 ==========
     results.summary.totalContent =
       results.summary.naverBlogTotal +
