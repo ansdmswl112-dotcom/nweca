@@ -188,6 +188,11 @@ module.exports = async (req, res) => {
           results.summary.monthlySearchMobile = parseAdCount(exact.monthlyMobileQcCnt);
           results.summary.monthlySearchTotal = results.summary.monthlySearchPC + results.summary.monthlySearchMobile;
           results.summary.competitionIndex = exact.compIdx || '';
+          results.summary.monthlyAvgPcCtr = exact.monthlyAvePcCtr || 0;
+          results.summary.monthlyAvgMobileCtr = exact.monthlyAveMobileCtr || 0;
+          results.summary.plAvgDepth = exact.plAvgDepth || 0;
+          results.summary.monthlyPcClkCnt = parseAdCount(exact.monthlyPcClkCnt);
+          results.summary.monthlyMobileClkCnt = parseAdCount(exact.monthlyMobileClkCnt);
         }
 
         // 연관 키워드 (광고 API 기반 - 더 정확함)
