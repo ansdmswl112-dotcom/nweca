@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+// VERSION: 2026-03-13-V2 (dual-trend + multi-sns + sentiment-neg)
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -169,12 +170,12 @@ module.exports = async (req, res) => {
       } catch (e) { console.error('Cafe error:', e.message); }
 
       // ═══════════════════════════════════════
-      // ④ 네이버 DataLab 트렌드
+      // ④ 네이버 DataLab 트렌드 (2중 수집)
       // ═══════════════════════════════════════
       try {
-        // ★ 항상 12개월 트렌드 데이터 수집 (모멘텀/계절성 분석용)
-        var trendFrom = new Date(new Date(dateTo).getTime() - 365 * 86400000).toISOString().split('T')[0];
-        var datalabRes = await fetch('https://openapi.naver.com/v1/datalab/search', {
+        // ★ A) 12개월 월별 (계절성 분석용)
+        var trendFrom12 = new Date(new Date(dateTo).getTime() - 365 * 86400000).toISOString().split('T')[0];
+        var dlRes12 = await fetch('https://openapi.naver.com/v1/datalab/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -182,25 +183,72 @@ module.exports = async (req, res) => {
             'X-Naver-Client-Secret': naverClientSecret
           },
           body: JSON.stringify({
-            startDate: trendFrom,
+            startDate: trendFrom12,
             endDate: dateTo,
             timeUnit: 'month',
             keywordGroups: [{ groupName: keyword, keywords: [keyword] }]
           })
         });
-        var datalabData = await datalabRes.json();
-        if (datalabData.results && datalabData.results[0]) {
-          var trendData = datalabData.results[0].data || [];
-          results.trend.naver = trendData.map(function(d) {
+        var dlData12 = await dlRes12.json();
+        if (dlData12.results && dlData12.results[0]) {
+          var td12 = dlData12.results[0].data || [];
+          results.trend.naver = td12.map(function(d) {
             return { date: d.period, value: Math.round(d.ratio) };
           });
-          if (trendData.length >= 4) {
-            var recent = trendData.slice(-3).reduce(function(s, d) { return s + d.ratio; }, 0) / 3;
-            var olderSlice = trendData.slice(-6, -3);
+          // 12개월 기반 트렌드 방향
+          if (td12.length >= 4) {
+            var recent = td12.slice(-3).reduce(function(s, d) { return s + d.ratio; }, 0) / 3;
+            var olderSlice = td12.slice(-6, -3);
             var older = olderSlice.length > 0 ? olderSlice.reduce(function(s, d) { return s + d.ratio; }, 0) / olderSlice.length : recent;
             if (recent > older * 1.1) results.summary.trendDirection = '상승';
             else if (recent < older * 0.9) results.summary.trendDirection = '하락';
             else results.summary.trendDirection = '유지';
+          }
+        }
+
+        // ★ B) 선택 기간 일별 (모멘텀/트렌딩 분석용)
+        var daysDiff = Math.round((new Date(dateTo) - new Date(dateFrom)) / 86400000);
+        var dlFromDaily = dateFrom;
+        if (daysDiff < 31) {
+          dlFromDaily = new Date(new Date(dateTo).getTime() - 31 * 86400000).toISOString().split('T')[0];
+        }
+        var dlResDaily = await fetch('https://openapi.naver.com/v1/datalab/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Naver-Client-Id': naverClientId,
+            'X-Naver-Client-Secret': naverClientSecret
+          },
+          body: JSON.stringify({
+            startDate: dlFromDaily,
+            endDate: dateTo,
+            timeUnit: 'date',
+            keywordGroups: [{ groupName: keyword, keywords: [keyword] }]
+          })
+        });
+        var dlDataDaily = await dlResDaily.json();
+        if (dlDataDaily.results && dlDataDaily.results[0]) {
+          var tdDaily = dlDataDaily.results[0].data || [];
+          results.trend.daily = tdDaily.map(function(d) {
+            return { date: d.period, value: Math.round(d.ratio) };
+          });
+          // 일별 모멘텀 (최근 7일 vs 이전 7일)
+          if (tdDaily.length >= 14) {
+            var r7 = tdDaily.slice(-7).reduce(function(s, d) { return s + d.ratio; }, 0) / 7;
+            var p7 = tdDaily.slice(-14, -7).reduce(function(s, d) { return s + d.ratio; }, 0) / 7;
+            results.summary.dailyMomentum = p7 > 0 ? Math.round((r7 - p7) / p7 * 100) : 0;
+          } else if (tdDaily.length >= 4) {
+            var half = Math.ceil(tdDaily.length / 2);
+            var rH = tdDaily.slice(-half).reduce(function(s, d) { return s + d.ratio; }, 0) / half;
+            var pH = tdDaily.slice(0, half).reduce(function(s, d) { return s + d.ratio; }, 0) / half;
+            results.summary.dailyMomentum = pH > 0 ? Math.round((rH - pH) / pH * 100) : 0;
+          }
+          // 일별 피크/저점
+          if (tdDaily.length > 0) {
+            var peak = tdDaily.reduce(function(m, d) { return d.ratio > m.ratio ? d : m; }, tdDaily[0]);
+            var low = tdDaily.reduce(function(m, d) { return d.ratio < m.ratio ? d : m; }, tdDaily[0]);
+            results.summary.dailyPeak = { date: peak.period, value: Math.round(peak.ratio) };
+            results.summary.dailyLow = { date: low.period, value: Math.round(low.ratio) };
           }
         }
       } catch (e) { console.error('DataLab error:', e.message); }
