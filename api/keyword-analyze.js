@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-// VERSION: 2026-03-13-FACT-ONLY (추정치 제거, 팩트만)
+// VERSION: 2026-03-13-YOUTUBE-API (YouTube Data API v3 + Google CSE)
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
   var months = parseInt(params.months) || 12;
   var dateTo = params.dateTo || new Date().toISOString().split('T')[0];
-  var dateFrom = params.dateFrom || (function(){
+  var dateFrom = params.dateFrom || (function() {
     var d = new Date();
     if (months < 1) d.setDate(d.getDate() - Math.round(months * 30));
     else d.setMonth(d.getMonth() - Math.round(months));
@@ -23,6 +23,9 @@ module.exports = async (req, res) => {
   var NID = process.env.NAVER_CLIENT_ID, NSC = process.env.NAVER_CLIENT_SECRET;
   var adKey = process.env.NAVER_AD_API_LICENSE, adSec = process.env.NAVER_AD_SECRET_KEY, adCust = process.env.NAVER_AD_CUSTOMER_ID;
   var serpKey = process.env.SERPAPI_KEY;
+  var ytKey = process.env.YOUTUBE_API_KEY;
+  var gKey = process.env.GOOGLE_API_KEY || ytKey;
+  var gCx = process.env.GOOGLE_CSE_ID;
 
   var R = {
     ok: true, keyword: keyword,
@@ -44,8 +47,6 @@ module.exports = async (req, res) => {
   };
 
   var nH = NID ? { 'X-Naver-Client-Id': NID, 'X-Naver-Client-Secret': NSC } : null;
-  var fp = dateFrom.split('-'), tp = dateTo.split('-');
-  var tbs = '&tbs=cdr:1,cd_min:' + fp[1] + '/' + fp[2] + '/' + fp[0] + ',cd_max:' + tp[1] + '/' + tp[2] + '/' + tp[0];
 
   try {
     var tasks = [];
@@ -58,9 +59,6 @@ module.exports = async (req, res) => {
     if (nH) tasks.push(fetch('https://openapi.naver.com/v1/search/cafearticle.json?query=' + encodeURIComponent(keyword) + '&display=100&sort=date', { headers: nH }).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
     if (nH) tasks.push(fetch('https://openapi.naver.com/v1/search/kin.json?query=' + encodeURIComponent(keyword) + '&display=10&sort=date', { headers: nH }).then(r => r.json()).catch(() => null));
-    else tasks.push(Promise.resolve(null));
-    // [3b] 네이버 웹검색 "키워드 유튜브" (YouTube 백업 — SerpAPI 쿼터 안 씀)
-    if (nH) tasks.push(fetch('https://openapi.naver.com/v1/search/webkr.json?query=' + encodeURIComponent(keyword + ' 유튜브') + '&display=20&sort=date', { headers: nH }).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
 
     // [4] DataLab 12개월  [5] DataLab 일별
@@ -81,35 +79,42 @@ module.exports = async (req, res) => {
       tasks.push(fetch('https://api.searchad.naver.com/keywordstool?hintKeywords=' + encodeURIComponent(keyword) + '&showDetail=1', { headers: { 'X-Timestamp': ts, 'X-API-KEY': adKey, 'X-Customer': adCust, 'X-Signature': hm.digest('base64') } }).then(r => r.json()).catch(() => null));
     } else tasks.push(Promise.resolve(null));
 
-    // [7] 인스타  [8] 페북  (구글 기간필터)
-    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:instagram.com&hl=ko&gl=kr&num=20' + tbs + '&api_key=' + serpKey).then(r => r.json()).catch(e => { console.error('Insta error:', e.message); return null; }));
-    else tasks.push(Promise.resolve(null));
-    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:facebook.com&hl=ko&gl=kr&num=20' + tbs + '&api_key=' + serpKey).then(r => r.json()).catch(e => { console.error('FB error:', e.message); return null; }));
+    // ★★★ [7] YouTube Data API — 채널 검색 (채널 ID 찾기)
+    if (ytKey) tasks.push(fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + encodeURIComponent(keyword) + '&type=channel&maxResults=3&key=' + ytKey).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
 
-    // ★★★ [9] 유튜브 — YouTube 엔진 직접 (영상 제목 검색)
-    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=youtube&search_query=' + encodeURIComponent(keyword) + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(e => { console.error('YouTube error:', e.message); return null; }));
-    else tasks.push(Promise.resolve(null));
-    // ★★★ [9b] 유튜브 — 채널명 검색 (제목에 이름 없어도 채널에서 찾기)
-    var kwFirst = keyword.split(/\s+/)[0];
-    if (serpKey && kwFirst.length >= 2) tasks.push(fetch('https://serpapi.com/search.json?engine=youtube&search_query=' + encodeURIComponent(kwFirst + ' 채널') + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(e => { console.error('YouTube CH error:', e.message); return null; }));
+    // ★★★ [8] YouTube Data API — 영상 검색 (키워드 관련 영상)
+    var ytAfter = dateFrom + 'T00:00:00Z';
+    var ytBefore = dateTo + 'T23:59:59Z';
+    if (ytKey) tasks.push(fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + encodeURIComponent(keyword) + '&type=video&order=date&maxResults=20&publishedAfter=' + ytAfter + '&publishedBefore=' + ytBefore + '&key=' + ytKey).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
 
-    // [10] 구글뉴스  [11] 구글트렌드
-    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_news&q=' + encodeURIComponent(keyword) + '+after:' + dateFrom + '+before:' + dateTo + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(e => { console.error('GNews error:', e.message); return null; }));
+    // [9] Google CSE — 인스타  [10] Google CSE — 페북
+    if (gKey && gCx) {
+      var drFrom = dateFrom.replace(/-/g, '');
+      var drTo = dateTo.replace(/-/g, '');
+      tasks.push(fetch('https://www.googleapis.com/customsearch/v1?key=' + gKey + '&cx=' + gCx + '&q=' + encodeURIComponent(keyword) + '+site:instagram.com&num=10&sort=date:r:' + drFrom + ':' + drTo).then(r => r.json()).catch(() => null));
+      tasks.push(fetch('https://www.googleapis.com/customsearch/v1?key=' + gKey + '&cx=' + gCx + '&q=' + encodeURIComponent(keyword) + '+site:facebook.com&num=10&sort=date:r:' + drFrom + ':' + drTo).then(r => r.json()).catch(() => null));
+    } else {
+      tasks.push(Promise.resolve(null));
+      tasks.push(Promise.resolve(null));
+    }
+
+    // [11] SerpAPI 구글뉴스  [12] SerpAPI 구글트렌드 (이것만 SerpAPI)
+    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_news&q=' + encodeURIComponent(keyword) + '+after:' + dateFrom + '+before:' + dateTo + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
-    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_trends&q=' + encodeURIComponent(keyword) + '&data_type=TIMESERIES&date=' + dateFrom + ' ' + dateTo + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(e => { console.error('GTrend error:', e.message); return null; }));
+    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_trends&q=' + encodeURIComponent(keyword) + '&data_type=TIMESERIES&date=' + dateFrom + ' ' + dateTo + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
 
     var results = await Promise.all(tasks);
-    var blogD = results[0], newsD = results[1], cafeD = results[2], kinD = results[3], ytNaverD = results[4];
-    var dl12D = results[5], dlDayD = results[6], adD = results[7];
-    var instaD = results[8], fbD = results[9];
-    var ytDirectD = results[10], ytChD = results[11];
-    var gnD = results[12], gtD = results[13];
+    var blogD = results[0], newsD = results[1], cafeD = results[2], kinD = results[3];
+    var dl12D = results[4], dlDayD = results[5], adD = results[6];
+    var ytChD = results[7], ytVidD = results[8];
+    var instaD = results[9], fbD = results[10];
+    var gnD = results[11], gtD = results[12];
 
     // ════════════════════════════════════════
-    // 블로그 — 팩트: 기간 내 확인된 건수만 (추정 안 함)
+    // 블로그 — 기간 내 확인 건수
     // ════════════════════════════════════════
     if (blogD && blogD.items) {
       R.summary.naverBlogAll = blogD.total || 0;
@@ -121,7 +126,7 @@ module.exports = async (req, res) => {
     }
 
     // ════════════════════════════════════════
-    // 뉴스 — 팩트: 기간 내 확인된 건수만
+    // 뉴스 — 기간 내 확인 건수
     // ════════════════════════════════════════
     if (newsD && newsD.items) {
       R.summary.naverNewsAll = newsD.total || 0;
@@ -133,27 +138,23 @@ module.exports = async (req, res) => {
     }
 
     // ════════════════════════════════════════
-    // 카페 — 네이버 API (날짜 없어서 블로그/뉴스 비율로 추정)
+    // 카페 — 네이버 API (날짜 없어서 비율 추정)
     // ════════════════════════════════════════
     if (cafeD && cafeD.items) {
       R.summary.naverCafeAll = cafeD.total || 0;
       R.content.cafe = (cafeD.items || []).slice(0, 10).map(function(i) { return { title: sh(i.title), description: sh(i.description), link: i.link, source: i.cafename || '카페', date: '' }; });
-      // 블로그+뉴스의 기간 내 비율 평균으로 추정
       var bAll = R.summary.naverBlogAll || 1, nAll = R.summary.naverNewsAll || 1;
-      var bRatio = R.summary.naverBlogTotal / bAll;
-      var nRatio = R.summary.naverNewsTotal / nAll;
-      var avgRatio = (bRatio + nRatio) / 2;
-      R.summary.naverCafeTotal = Math.round(R.summary.naverCafeAll * avgRatio);
-      R.summary.dataSource.cafe = '네이버 카페 (전체 ' + R.summary.naverCafeAll.toLocaleString() + '건, 기간 내 추정 ' + R.summary.naverCafeTotal.toLocaleString() + '건)';
+      R.summary.naverCafeTotal = Math.round(R.summary.naverCafeAll * ((R.summary.naverBlogTotal / bAll + R.summary.naverNewsTotal / nAll) / 2));
+      R.summary.dataSource.cafe = '네이버 카페 (전체 ' + R.summary.naverCafeAll.toLocaleString() + '건)';
     }
 
     // ════════════════════════════════════════
-    // 지식iN — 네이버 API
+    // 지식iN
     // ════════════════════════════════════════
     if (kinD && kinD.items) {
       R.summary.naverKinTotal = kinD.total || 0;
       R.content.kin = (kinD.items || []).slice(0, 10).map(function(i) { return { title: sh(i.title), description: sh(i.description).substring(0, 60), link: i.link, date: '' }; });
-      R.summary.dataSource.kin = '네이버 지식iN (전체 ' + R.summary.naverKinTotal.toLocaleString() + '건)';
+      R.summary.dataSource.kin = '네이버 지식iN (' + R.summary.naverKinTotal.toLocaleString() + '건)';
     }
 
     // ════════════════════════════════════════
@@ -199,7 +200,6 @@ module.exports = async (req, res) => {
         R.summary.monthlyAvgMobileCtr = parseFloat(ex.monthlyAveMobileCtr) || 0;
         R.summary.plAvgDepth = parseFloat(ex.plAvgDepth) || 0;
       }
-      // 연관키워드
       var adMap = {}; kl.forEach(function(k) { adMap[k.relKeyword] = { vol: pa(k.monthlyPcQcCnt) + pa(k.monthlyMobileQcCnt), pc: pa(k.monthlyPcQcCnt), mobile: pa(k.monthlyMobileQcCnt), comp: k.compIdx || '' }; });
       var tw = {}, sw = ['있는', '하는', '위한', '대한', '통한', '관련', '에서', '으로', '했다', '밝혔', '이번', '지난'];
       var kp = keyword.split(/\s+/);
@@ -208,93 +208,112 @@ module.exports = async (req, res) => {
         t.split(/[\s,·+\-\/|()[\]{}\"\'""'']+/).forEach(function(w) { var c = w.trim(); if (c.length >= 2 && c.length <= 15 && sw.indexOf(c) === -1 && !/^\d+$/.test(c)) tw[c] = (tw[c] || 0) + 1; });
       });
       var stw = Object.entries(tw).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 15);
-      if (stw.length > 0) {
-        R.relatedKeywords = stw.map(function(p) { var ai = adMap[p[0]] || {}; return { kw: p[0], count: p[1], vol: ai.vol || 0, pc: ai.pc || 0, mobile: ai.mobile || 0, comp: ai.comp || '', source: 'content' }; });
-      } else {
-        R.relatedKeywords = kl.filter(function(k) { return k.relKeyword !== keyword; }).slice(0, 15).map(function(k) { return { kw: k.relKeyword, count: 0, vol: pa(k.monthlyPcQcCnt) + pa(k.monthlyMobileQcCnt), source: 'ad' }; });
-      }
+      if (stw.length > 0) R.relatedKeywords = stw.map(function(p) { var ai = adMap[p[0]] || {}; return { kw: p[0], count: p[1], vol: ai.vol || 0, pc: ai.pc || 0, mobile: ai.mobile || 0, comp: ai.comp || '', source: 'content' }; });
+      else R.relatedKeywords = kl.filter(function(k) { return k.relKeyword !== keyword; }).slice(0, 15).map(function(k) { return { kw: k.relKeyword, count: 0, vol: pa(k.monthlyPcQcCnt) + pa(k.monthlyMobileQcCnt), source: 'ad' }; });
     }
 
     // ════════════════════════════════════════
-    // 인스타그램 — 구글 기간필터
-    // ════════════════════════════════════════
-    if (instaD && instaD.organic_results && instaD.organic_results.length > 0) {
-      var io = instaD.organic_results.map(function(i) { var u = ''; try { var m = i.link.match(/instagram\.com\/([^\/\?]+)/); if (m) u = '@' + m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: u || 'Instagram', date: i.date || '' }; });
-      var it = (instaD.search_information && instaD.search_information.total_results) || 0;
-      R.summary.instagramTotal = it > 0 ? it : io.length;
-      R.content.instagram = io;
-      R.summary.dataSource.instagram = '구글→인스타 (' + R.summary.instagramTotal.toLocaleString() + '건)';
-    }
-
-    // ════════════════════════════════════════
-    // 페이스북 — 구글 기간필터
-    // ════════════════════════════════════════
-    if (fbD && fbD.organic_results && fbD.organic_results.length > 0) {
-      var fo = fbD.organic_results.map(function(i) { var p = ''; try { var m = i.link.match(/facebook\.com\/([^\/\?]+)/); if (m) p = m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: p || 'Facebook', date: i.date || '' }; });
-      var ft = (fbD.search_information && fbD.search_information.total_results) || 0;
-      R.summary.facebookTotal = ft > 0 ? ft : fo.length;
-      R.content.facebook = fo;
-      R.summary.dataSource.facebook = '구글→페이스북 (' + R.summary.facebookTotal.toLocaleString() + '건)';
-    }
-
-    // ════════════════════════════════════════
-    // ★★★ 유튜브 — 제목 검색 + 채널명 검색 병합
+    // ★★★ YouTube Data API — 채널 찾기 + 영상 목록
     // ════════════════════════════════════════
     var ytItems = [];
     var ytSeen = {};
     var ytViews = 0;
-    // 두 검색 결과 병합 (제목 검색 + 채널명 검색)
-    [ytDirectD, ytChD].forEach(function(src) {
-      if (!src) return;
-      (src.video_results || []).forEach(function(v) {
-        var vw = 0;
-        if (v.views) { var vs = String(v.views).replace(/[^0-9.만천억회]/g, ''); if (vs.includes('억')) vw = Math.round(parseFloat(vs) * 1e8); else if (vs.includes('만')) vw = Math.round(parseFloat(vs) * 1e4); else if (vs.includes('천')) vw = Math.round(parseFloat(vs) * 1e3); else vw = parseInt(vs.replace(/[^0-9]/g, '')) || 0; }
-        var key = (v.link || '').replace(/[?&].*$/, '');
-        if (!ytSeen[key]) {
-          ytSeen[key] = true;
-          ytViews += vw;
-          var isShort = (v.link || '').includes('/shorts/');
-          ytItems.push({ title: v.title || '', link: v.link || '', views: vw, channel: (v.channel && v.channel.name) || '', date: v.published_date || '', type: isShort ? 'shorts' : 'video' });
+    var ytVideoIds = [];
+
+    // A) 키워드 영상 검색 결과 (기간 내 — publishedAfter/Before 적용됨!)
+    if (ytVidD && ytVidD.items) {
+      ytVidD.items.forEach(function(v) {
+        var vid = (v.id && v.id.videoId) || '';
+        if (vid && !ytSeen[vid]) {
+          ytSeen[vid] = true;
+          ytVideoIds.push(vid);
+          ytItems.push({
+            title: (v.snippet && v.snippet.title) || '',
+            link: 'https://www.youtube.com/watch?v=' + vid,
+            views: 0,
+            channel: (v.snippet && v.snippet.channelTitle) || '',
+            date: (v.snippet && v.snippet.publishedAt) ? v.snippet.publishedAt.substring(0, 10) : '',
+            type: 'video'
+          });
         }
       });
-      (src.shorts_results || []).forEach(function(s) {
-        var key = (s.link || '').replace(/[?&].*$/, '');
-        if (!ytSeen[key]) { ytSeen[key] = true; ytItems.push({ title: (s.title || '') + ' [숏츠]', link: s.link || '', views: 0, channel: (s.channel && s.channel.name) || '', date: '', type: 'shorts' }); }
-      });
-      if (src.channel_results) {
-        var chs = Array.isArray(src.channel_results) ? src.channel_results : [src.channel_results];
-        chs.forEach(function(ch) { if (ch && ch.title) R.summary.youtubeChannel = { name: ch.title, link: ch.link || '', subscribers: ch.subscribers || '' }; });
-      }
-    });
-    ytItems.sort(function(a, b) { return (b.views || 0) - (a.views || 0); });
-    if (ytItems.length > 0) {
-      R.content.youtube = ytItems;
-      R.summary.youtubeTotal = ytItems.length;
-      R.summary.youtubeViewTotal = ytViews;
-      R.summary.dataSource.youtube = 'YouTube 검색 (' + ytItems.length + '건, 조회 ' + ytViews.toLocaleString() + ')';
     }
-    // YouTube 백업: 네이버 웹검색 (SerpAPI 실패해도 잡힘)
-    if (ytNaverD && ytNaverD.items) {
-      var ytNaver = (ytNaverD.items || []).filter(function(i) { return (i.link || '').includes('youtube.com'); });
-      // 기존 YouTube 결과에 병합 (중복 제거)
-      ytNaver.forEach(function(i) {
-        var key = (i.link || '').replace(/[?&].*$/, '');
-        if (!ytSeen[key]) {
-          ytSeen[key] = true;
-          var isShort = (i.link || '').includes('/shorts/');
-          R.content.youtube.push({ title: sh(i.title), link: i.link, views: 0, channel: '', date: fd(i.date || ''), type: isShort ? 'shorts' : 'video' });
+
+    // B) 채널 찾기 → 채널 영상 목록
+    if (ytChD && ytChD.items && ytChD.items.length > 0 && ytKey) {
+      for (var ci = 0; ci < Math.min(ytChD.items.length, 2); ci++) {
+        var chId = ytChD.items[ci].id && ytChD.items[ci].id.channelId;
+        var chTitle = (ytChD.items[ci].snippet && ytChD.items[ci].snippet.title) || '';
+        if (chId) {
+          R.summary.youtubeChannel = { name: chTitle, id: chId, link: 'https://www.youtube.com/channel/' + chId };
+          try {
+            var chVidRes = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=' + chId + '&type=video&order=date&maxResults=15&publishedAfter=' + ytAfter + '&publishedBefore=' + ytBefore + '&key=' + ytKey);
+            var chVidData = await chVidRes.json();
+            if (chVidData.items) {
+              chVidData.items.forEach(function(v) {
+                var vid = (v.id && v.id.videoId) || '';
+                if (vid && !ytSeen[vid]) {
+                  ytSeen[vid] = true;
+                  ytVideoIds.push(vid);
+                  ytItems.push({
+                    title: (v.snippet && v.snippet.title) || '',
+                    link: 'https://www.youtube.com/watch?v=' + vid,
+                    views: 0,
+                    channel: chTitle,
+                    date: (v.snippet && v.snippet.publishedAt) ? v.snippet.publishedAt.substring(0, 10) : '',
+                    type: 'video'
+                  });
+                }
+              });
+            }
+          } catch(e) { console.error('YT channel videos error:', e.message); }
         }
-      });
-      if (R.content.youtube.length > 0) {
-        R.summary.youtubeTotal = R.content.youtube.length;
-        R.summary.dataSource.youtube = 'YouTube+네이버 (' + R.content.youtube.length + '건)';
       }
-      // 네이버 검색 총량 참고
-      R.summary.youtubeNaverTotal = ytNaverD.total || 0;
+    }
+
+    // C) 조회수 가져오기 (영상 ID로 statistics 요청)
+    if (ytVideoIds.length > 0 && ytKey) {
+      try {
+        var statsRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=statistics&id=' + ytVideoIds.join(',') + '&key=' + ytKey);
+        var statsData = await statsRes.json();
+        if (statsData.items) {
+          var viewMap = {};
+          statsData.items.forEach(function(v) { viewMap[v.id] = parseInt(v.statistics && v.statistics.viewCount) || 0; });
+          ytItems.forEach(function(item) {
+            var vid = item.link.replace('https://www.youtube.com/watch?v=', '');
+            if (viewMap[vid]) { item.views = viewMap[vid]; ytViews += viewMap[vid]; }
+          });
+        }
+      } catch(e) { console.error('YT stats error:', e.message); }
+    }
+
+    // 조회수순 정렬
+    ytItems.sort(function(a, b) { return (b.views || 0) - (a.views || 0); });
+    R.content.youtube = ytItems;
+    R.summary.youtubeTotal = ytItems.length;
+    R.summary.youtubeViewTotal = ytViews;
+    R.summary.dataSource.youtube = 'YouTube Data API (기간 ' + dateFrom + '~' + dateTo + ', ' + ytItems.length + '건, 조회 ' + ytViews.toLocaleString() + ')';
+
+    // ════════════════════════════════════════
+    // 인스타그램 — Google Custom Search
+    // ════════════════════════════════════════
+    if (instaD && instaD.items) {
+      R.content.instagram = instaD.items.map(function(i) { var u = ''; try { var m = i.link.match(/instagram\.com\/([^\/\?]+)/); if (m) u = '@' + m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: u || 'Instagram', date: '' }; });
+      R.summary.instagramTotal = (instaD.searchInformation && parseInt(instaD.searchInformation.totalResults)) || instaD.items.length;
+      R.summary.dataSource.instagram = 'Google CSE→인스타 (' + R.summary.instagramTotal.toLocaleString() + '건, 총게시물수 공유포함)';
     }
 
     // ════════════════════════════════════════
-    // 구글뉴스 + 구글트렌드
+    // 페이스북 — Google Custom Search
+    // ════════════════════════════════════════
+    if (fbD && fbD.items) {
+      R.content.facebook = fbD.items.map(function(i) { var p = ''; try { var m = i.link.match(/facebook\.com\/([^\/\?]+)/); if (m) p = m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: p || 'Facebook', date: '' }; });
+      R.summary.facebookTotal = (fbD.searchInformation && parseInt(fbD.searchInformation.totalResults)) || fbD.items.length;
+      R.summary.dataSource.facebook = 'Google CSE→페이스북 (' + R.summary.facebookTotal.toLocaleString() + '건, 총게시물수 공유포함)';
+    }
+
+    // ════════════════════════════════════════
+    // 구글뉴스 + 구글트렌드 (SerpAPI)
     // ════════════════════════════════════════
     if (gnD) {
       var gn = (gnD.news_results || []).slice(0, 10);
@@ -313,7 +332,7 @@ module.exports = async (req, res) => {
     }
 
     // ════════════════════════════════════════
-    // 총량 + 전체 콘텐츠 병합
+    // 총량 + 전체 콘텐츠
     // ════════════════════════════════════════
     R.summary.totalContent = R.summary.naverBlogTotal + R.summary.naverNewsTotal + R.summary.naverCafeTotal;
     R.contents = [].concat(
