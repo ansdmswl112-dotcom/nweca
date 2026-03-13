@@ -273,18 +273,24 @@ module.exports = async (req, res) => {
       R.summary.youtubeViewTotal = ytViews;
       R.summary.dataSource.youtube = 'YouTube 검색 (' + ytItems.length + '건, 조회 ' + ytViews.toLocaleString() + ')';
     }
-    // YouTube 백업: 네이버에서 "키워드 유튜브" 검색 (SerpAPI 실패해도 잡힘)
-    if (ytNaverD && ytNaverD.items && R.content.youtube.length === 0) {
+    // YouTube 백업: 네이버 웹검색 (SerpAPI 실패해도 잡힘)
+    if (ytNaverD && ytNaverD.items) {
       var ytNaver = (ytNaverD.items || []).filter(function(i) { return (i.link || '').includes('youtube.com'); });
-      if (ytNaver.length > 0) {
-        R.content.youtube = ytNaver.map(function(i) { return { title: sh(i.title), link: i.link, views: 0, channel: '', date: fd(i.date || ''), type: 'video' }; });
-        R.summary.youtubeTotal = ytNaver.length;
-        R.summary.dataSource.youtube = '네이버→유튜브 검색 (' + ytNaver.length + '건, SerpAPI 백업)';
+      // 기존 YouTube 결과에 병합 (중복 제거)
+      ytNaver.forEach(function(i) {
+        var key = (i.link || '').replace(/[?&].*$/, '');
+        if (!ytSeen[key]) {
+          ytSeen[key] = true;
+          var isShort = (i.link || '').includes('/shorts/');
+          R.content.youtube.push({ title: sh(i.title), link: i.link, views: 0, channel: '', date: fd(i.date || ''), type: isShort ? 'shorts' : 'video' });
+        }
+      });
+      if (R.content.youtube.length > 0) {
+        R.summary.youtubeTotal = R.content.youtube.length;
+        R.summary.dataSource.youtube = 'YouTube+네이버 (' + R.content.youtube.length + '건)';
       }
-    }
-    // YouTube 네이버 검색 총량 (참고용)
-    if (ytNaverD && ytNaverD.total) {
-      R.summary.youtubeNaverTotal = ytNaverD.total;
+      // 네이버 검색 총량 참고
+      R.summary.youtubeNaverTotal = ytNaverD.total || 0;
     }
 
     // ════════════════════════════════════════
