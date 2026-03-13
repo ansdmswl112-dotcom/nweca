@@ -288,9 +288,41 @@ module.exports = async (req, res) => {
     }
 
     // ═══════════════════════════════════════
-    // ⑥ 인스타그램 (Meta API → SerpAPI 폴백)
+    // ⑥ 인스타그램 — 네이버 검색(팩트) → Meta API → SerpAPI
     // ═══════════════════════════════════════
-    if (metaToken && metaIgUserId) {
+    // 방법1: 네이버에서 "키워드 인스타그램" 검색 (팩트)
+    if (naverClientId && naverClientSecret) {
+      try {
+        var instaNaverRes = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(keyword + ' 인스타그램') + '&display=10&sort=date', {
+          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
+        });
+        var instaNaverData = await instaNaverRes.json();
+        var instaNaverTotal = instaNaverData.total || 0;
+        // 네이버 뉴스에서도 검색
+        var instaNewsRes = await fetch('https://openapi.naver.com/v1/search/news.json?query=' + encodeURIComponent(keyword + ' 인스타그램') + '&display=5&sort=date', {
+          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
+        });
+        var instaNewsData = await instaNewsRes.json();
+        instaNaverTotal += (instaNewsData.total || 0);
+
+        if (instaNaverTotal > 0) {
+          results.summary.instagramTotal = instaNaverTotal;
+          results.summary.dataSource.instagram = '네이버 검색 "' + keyword + ' 인스타그램" (팩트, ' + instaNaverTotal.toLocaleString() + '건)';
+          results.content.instagram = (instaNaverData.items || []).slice(0, 10).map(function(item) {
+            return {
+              title: stripHtml(item.title),
+              snippet: stripHtml(item.description).substring(0, 40),
+              link: item.link,
+              source: item.bloggername || 'Instagram 관련',
+              date: formatDate(item.postdate || '')
+            };
+          });
+        }
+      } catch (e) { console.error('Naver Instagram search error:', e.message); }
+    }
+
+    // 방법2: Meta Graph API (심사 통과 후)
+    if (metaToken && metaIgUserId && results.summary.instagramTotal === 0) {
       try {
         var tag = keyword.replace(/\s/g, '');
         var searchUrl = 'https://graph.facebook.com/v19.0/ig_hashtag_search?q=' + encodeURIComponent(tag) + '&user_id=' + metaIgUserId + '&access_token=' + metaToken;
@@ -339,9 +371,40 @@ module.exports = async (req, res) => {
     }
 
     // ═══════════════════════════════════════
-    // ⑦ 페이스북 (Meta API → SerpAPI 폴백)
+    // ⑦ 페이스북 — 네이버 검색(팩트) → Meta API → SerpAPI
     // ═══════════════════════════════════════
-    if (metaToken) {
+    // 방법1: 네이버에서 "키워드 페이스북" 검색 (팩트)
+    if (naverClientId && naverClientSecret) {
+      try {
+        var fbNaverRes = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(keyword + ' 페이스북') + '&display=10&sort=date', {
+          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
+        });
+        var fbNaverData = await fbNaverRes.json();
+        var fbNaverTotal = fbNaverData.total || 0;
+        var fbNewsRes = await fetch('https://openapi.naver.com/v1/search/news.json?query=' + encodeURIComponent(keyword + ' 페이스북') + '&display=5&sort=date', {
+          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
+        });
+        var fbNewsData = await fbNewsRes.json();
+        fbNaverTotal += (fbNewsData.total || 0);
+
+        if (fbNaverTotal > 0) {
+          results.summary.facebookTotal = fbNaverTotal;
+          results.summary.dataSource.facebook = '네이버 검색 "' + keyword + ' 페이스북" (팩트, ' + fbNaverTotal.toLocaleString() + '건)';
+          results.content.facebook = (fbNaverData.items || []).slice(0, 10).map(function(item) {
+            return {
+              title: stripHtml(item.title),
+              snippet: stripHtml(item.description).substring(0, 40),
+              link: item.link,
+              source: item.bloggername || 'Facebook 관련',
+              date: formatDate(item.postdate || '')
+            };
+          });
+        }
+      } catch (e) { console.error('Naver Facebook search error:', e.message); }
+    }
+
+    // 방법2: Meta Graph API
+    if (metaToken && results.summary.facebookTotal === 0) {
       try {
         var fbUrl = 'https://graph.facebook.com/v19.0/search?q=' + encodeURIComponent(keyword) + '&type=page&fields=name,fan_count,link,category,about&access_token=' + metaToken + '&limit=10';
         var fbRes = await fetch(fbUrl);
