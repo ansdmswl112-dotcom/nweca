@@ -78,17 +78,17 @@ module.exports = async (req, res) => {
       var crypto=require('crypto');var ts=Date.now().toString();var hm=crypto.createHmac('sha256',adSec);hm.update(ts+'.GET./keywordstool');var sig=hm.digest('base64');
       tasks.push(fetch('https://api.searchad.naver.com/keywordstool?hintKeywords='+encodeURIComponent(keyword)+'&showDetail=1',{headers:{'X-Timestamp':ts,'X-API-KEY':adKey,'X-Customer':adCust,'X-Signature':sig}}).then(r=>r.json()).catch(()=>null));
     } else tasks.push(Promise.resolve(null));
-    // [7] SerpAPI 인스타
-    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:instagram.com&hl=ko&gl=kr&num=10'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
+    // [7] SerpAPI 인스타 (기간 필터)
+    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:instagram.com&hl=ko&gl=kr&num=20'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
-    // [8] SerpAPI 페북
-    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:facebook.com&hl=ko&gl=kr&num=10'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
+    // [8] SerpAPI 페북 (기간 필터)
+    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:facebook.com&hl=ko&gl=kr&num=20'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
-    // [9] SerpAPI 유튜브 직접
-    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=youtube&search_query='+encodeURIComponent(keyword)+'&hl=ko&gl=kr&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
+    // [9] SerpAPI 유튜브 직접 (최신순 정렬 + 숏츠)
+    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=youtube&search_query='+encodeURIComponent(keyword)+'&sp=CAI%253D&hl=ko&gl=kr&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
-    // [10] SerpAPI 유튜브 기간 건수
-    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:youtube.com&hl=ko&gl=kr&num=5'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
+    // [10] SerpAPI 유튜브 기간 건수 (구글 검색 기간필터)
+    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:youtube.com&hl=ko&gl=kr&num=20'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
     // [11] SerpAPI 구글뉴스
     if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_news&q='+encodeURIComponent(keyword)+'+after:'+dateFrom+'+before:'+dateTo+'&hl=ko&gl=kr&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
@@ -193,34 +193,54 @@ module.exports = async (req, res) => {
         R.relatedKeywords=kl.filter(function(k){return k.relKeyword!==keyword;}).slice(0,15).map(function(k){return{kw:k.relKeyword,count:0,vol:pa(k.monthlyPcQcCnt)+pa(k.monthlyMobileQcCnt),pc:pa(k.monthlyPcQcCnt),mobile:pa(k.monthlyMobileQcCnt),comp:k.compIdx||'',source:'ad'};});
       }
     }
-    // ── 인스타그램 ──
+    // ── 인스타그램 (기간 필터 적용) ──
     if(instaD){
-      var io=(instaD.organic_results||[]).slice(0,10).map(function(i,idx){var u='';try{var m=i.link.match(/instagram\.com\/([^\/\?]+)/);if(m)u='@'+m[1];}catch(e){}return{title:i.title||'',snippet:i.snippet||'',link:i.link,source:u||'Instagram',date:i.date||''};});
-      var it=(instaD.search_information&&instaD.search_information.total_results)||0;
-      if(it>0||io.length>0){R.summary.instagramTotal=it;R.content.instagram=io;R.summary.dataSource.instagram='구글 검색 기간 내 ('+it.toLocaleString()+'건)';}
+      var io=(instaD.organic_results||[]).map(function(i,idx){var u='';try{var m=i.link.match(/instagram\.com\/([^\/\?]+)/);if(m)u='@'+m[1];}catch(e){}return{title:i.title||'',snippet:i.snippet||'',link:i.link,source:u||'Instagram',date:i.date||''};});
+      var it=(instaD.search_information&&instaD.search_information.total_results)||io.length;
+      if(it>0||io.length>0){R.summary.instagramTotal=it;R.content.instagram=io;R.summary.dataSource.instagram='구글 검색 기간 내 ('+dateFrom+'~'+dateTo+', '+it.toLocaleString()+'건)';}
     }
-    // ── 페이스북 ──
+    // ── 페이스북 (기간 필터 적용) ──
     if(fbD){
-      var fo=(fbD.organic_results||[]).slice(0,10).map(function(i){var p='';try{var m=i.link.match(/facebook\.com\/([^\/\?]+)/);if(m)p=m[1];}catch(e){}return{title:i.title||'',snippet:i.snippet||'',link:i.link,source:p||'Facebook',date:i.date||''};});
-      var ft=(fbD.search_information&&fbD.search_information.total_results)||0;
-      if(ft>0||fo.length>0){R.summary.facebookTotal=ft;R.content.facebook=fo;R.summary.dataSource.facebook='구글 검색 기간 내 ('+ft.toLocaleString()+'건)';}
+      var fo=(fbD.organic_results||[]).map(function(i){var p='';try{var m=i.link.match(/facebook\.com\/([^\/\?]+)/);if(m)p=m[1];}catch(e){}return{title:i.title||'',snippet:i.snippet||'',link:i.link,source:p||'Facebook',date:i.date||''};});
+      var ft=(fbD.search_information&&fbD.search_information.total_results)||fo.length;
+      if(ft>0||fo.length>0){R.summary.facebookTotal=ft;R.content.facebook=fo;R.summary.dataSource.facebook='구글 검색 기간 내 ('+dateFrom+'~'+dateTo+', '+ft.toLocaleString()+'건)';}
     }
-    // ── 유튜브 (직접 + 기간 건수) ──
+    // ── 유튜브 (구글 기간필터 + YouTube 직접 병합) ──
+    var ytAllItems=[];
+    var ytTotalViews=0;
+    // A) 구글 검색 기간 필터 결과 (기간 내 콘텐츠 — 메인)
+    if(ytGD&&ytGD.organic_results){
+      ytGD.organic_results.forEach(function(v){
+        ytAllItems.push({title:v.title||'',link:v.link||'',views:0,channel:v.source||'',date:v.date||'',type:'video',snippet:v.snippet||''});
+      });
+    }
+    // B) YouTube 직접 검색 (조회수 + 숏츠)
     if(ytD){
       var yv=(ytD.video_results||[]).slice(0,15);
       var ys=(ytD.shorts_results||[]).slice(0,5);
-      var ya=[];var tv=0;
       yv.forEach(function(v){
         var vw=0;if(v.views){var vs=String(v.views).replace(/[^0-9.만천억]/g,'');if(vs.includes('억'))vw=Math.round(parseFloat(vs)*1e8);else if(vs.includes('만'))vw=Math.round(parseFloat(vs)*1e4);else if(vs.includes('천'))vw=Math.round(parseFloat(vs)*1e3);else vw=parseInt(vs)||0;}
-        tv+=vw;ya.push({title:v.title||'',link:v.link||'',views:vw,channel:(v.channel&&v.channel.name)||'',date:v.published_date||'',type:'video'});
+        ytTotalViews+=vw;
+        // 중복 제거: 같은 링크 없을 때만 추가
+        var exists=ytAllItems.some(function(e){return e.link===v.link;});
+        if(!exists){
+          ytAllItems.push({title:v.title||'',link:v.link||'',views:vw,channel:(v.channel&&v.channel.name)||'',date:v.published_date||'',type:'video'});
+        }else{
+          // 기존 항목에 조회수 병합
+          ytAllItems.forEach(function(e){if(e.link===v.link)e.views=vw;});
+        }
       });
-      ys.forEach(function(s){ya.push({title:(s.title||'')+' [숏츠]',link:s.link||'',views:0,channel:(s.channel&&s.channel.name)||'',date:'',type:'shorts'});});
-      var ytPeriod=(ytGD&&ytGD.search_information&&ytGD.search_information.total_results)||0;
-      R.content.youtube=ya.slice(0,10);
-      R.summary.youtubeTotal=ytPeriod>0?ytPeriod:ya.length;
-      R.summary.youtubeViewTotal=tv;
-      R.summary.dataSource.youtube='YouTube (영상'+yv.length+'+숏츠'+ys.length+', 기간 내 '+(ytPeriod||ya.length)+'건)';
+      ys.forEach(function(s){
+        ytAllItems.push({title:(s.title||'')+' [숏츠]',link:s.link||'',views:0,channel:(s.channel&&s.channel.name)||'',date:'',type:'shorts'});
+      });
     }
+    // 조회수순 정렬
+    ytAllItems.sort(function(a,b){return(b.views||0)-(a.views||0);});
+    var ytPeriodTotal=(ytGD&&ytGD.search_information&&ytGD.search_information.total_results)||ytAllItems.length;
+    R.content.youtube=ytAllItems;
+    R.summary.youtubeTotal=ytPeriodTotal;
+    R.summary.youtubeViewTotal=ytTotalViews;
+    R.summary.dataSource.youtube='YouTube 기간 내 ('+dateFrom+'~'+dateTo+', '+ytPeriodTotal+'건, 조회 '+ytTotalViews.toLocaleString()+')';
     // ── 구글뉴스 ──
     if(gnD){
       var gn=(gnD.news_results||[]).slice(0,10);
