@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-// VERSION: 2026-03-13-FINAL-v2 (dual-trend + multi-sns + sentiment-neg)
+// VERSION: 2026-03-13-FINAL-v3-shorts (dual-trend + multi-sns + sentiment-neg)
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -479,21 +479,63 @@ module.exports = async (req, res) => {
     }
 
     // ═══════════════════════════════════════
-    // ⑨ 유튜브 (구글 검색 기간 필터 적용)
+    // ⑨ 유튜브 (YouTube 엔진 직접 + 구글 기간필터 병합)
     // ═══════════════════════════════════════
     if (serpApiKey) {
       try {
-        var ytRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:youtube.com&hl=ko&gl=kr&num=10' + tbsParam + '&api_key=' + serpApiKey);
-        var ytData = await ytRes.json();
-        var ytOrganic = (ytData.organic_results || []).slice(0, 10);
-        results.content.youtube = ytOrganic.map(function(v) {
-          var channel = '';
-          try { var match = v.link.match(/youtube\.com\/(watch|channel|@)([^\/\?&]+)/); if (match) channel = match[2]; } catch(e) {}
-          return { title: v.title || '', link: v.link || '', views: 0, channel: channel || v.source || '', date: v.date || '', snippet: v.snippet || '' };
+        // A) YouTube 엔진 직접 검색 (숏츠 포함, 최신 영상 잘 잡음)
+        var ytDirectRes = await fetch('https://serpapi.com/search.json?engine=youtube&search_query=' + encodeURIComponent(keyword) + '&hl=ko&gl=kr&api_key=' + serpApiKey);
+        var ytDirectData = await ytDirectRes.json();
+        var ytVideos = (ytDirectData.video_results || []).slice(0, 15);
+        // 숏츠도 별도 수집
+        var ytShorts = (ytDirectData.shorts_results || []).slice(0, 5);
+        
+        // B) 기간 내 영상만 필터 (날짜 파싱)
+        var allYtItems = [];
+        ytVideos.forEach(function(v) {
+          var pubDate = v.published_date || '';
+          var views = 0;
+          if (v.views) {
+            var vStr = String(v.views).replace(/[^0-9.만천억]/g, '');
+            if (vStr.includes('억')) views = Math.round(parseFloat(vStr) * 100000000);
+            else if (vStr.includes('만')) views = Math.round(parseFloat(vStr) * 10000);
+            else if (vStr.includes('천')) views = Math.round(parseFloat(vStr) * 1000);
+            else views = parseInt(vStr) || 0;
+          }
+          allYtItems.push({
+            title: v.title || '',
+            link: v.link || '',
+            views: views,
+            channel: (v.channel && v.channel.name) || '',
+            date: pubDate,
+            type: 'video',
+            thumbnail: (v.thumbnail && v.thumbnail.static) || ''
+          });
         });
-        var ytTotal = (ytData.search_information && ytData.search_information.total_results) || ytOrganic.length;
-        results.summary.youtubeTotal = ytTotal;
-        results.summary.dataSource.youtube = '구글 검색 기간 내 YouTube (' + dateFrom + '~' + dateTo + ', ' + ytTotal.toLocaleString() + '건)';
+        // 숏츠 추가
+        ytShorts.forEach(function(s) {
+          allYtItems.push({
+            title: (s.title || '') + ' [숏츠]',
+            link: s.link || '',
+            views: 0,
+            channel: (s.channel && s.channel.name) || '',
+            date: '',
+            type: 'shorts',
+            thumbnail: (s.thumbnail || '')
+          });
+        });
+
+        // C) 구글 검색으로 기간 내 총 건수 확인
+        var ytGoogleRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:youtube.com&hl=ko&gl=kr&num=5' + tbsParam + '&api_key=' + serpApiKey);
+        var ytGoogleData = await ytGoogleRes.json();
+        var ytPeriodTotal = (ytGoogleData.search_information && ytGoogleData.search_information.total_results) || 0;
+
+        // 결과 병합
+        var totalViews = allYtItems.reduce(function(s, v) { return s + v.views; }, 0);
+        results.content.youtube = allYtItems.slice(0, 10);
+        results.summary.youtubeTotal = ytPeriodTotal > 0 ? ytPeriodTotal : allYtItems.length;
+        results.summary.youtubeViewTotal = totalViews;
+        results.summary.dataSource.youtube = 'YouTube 검색 (영상' + ytVideos.length + '+숏츠' + ytShorts.length + '건, 기간 내 ' + (ytPeriodTotal > 0 ? ytPeriodTotal.toLocaleString() + '건' : '확인중') + ', 총 조회수 ' + totalViews.toLocaleString() + ')';
       } catch (e) { console.error('YouTube error:', e.message); }
     }
 
