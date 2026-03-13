@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-// VERSION: 2026-03-13-V2 (dual-trend + multi-sns + sentiment-neg)
+// VERSION: 2026-03-13-V3 (dual-trend + multi-sns + sentiment-neg)
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -312,16 +312,22 @@ module.exports = async (req, res) => {
           results.summary.monthlyMobileClkCnt = parseAdCount(exact.monthlyMobileClkCnt);
         }
 
-        // 연관 키워드 (광고 API 기반)
+        // 연관 키워드 (광고 API 기반 — 실제 검색량 포함)
         var adRelated = keywordList
-          .filter(function(k) { return k.relKeyword !== keyword; })
-          .sort(function(a, b) {
-            var aVol = parseAdCount(a.monthlyPcQcCnt) + parseAdCount(a.monthlyMobileQcCnt);
-            var bVol = parseAdCount(b.monthlyPcQcCnt) + parseAdCount(b.monthlyMobileQcCnt);
-            return bVol - aVol;
+          .filter(function(k) { return k.relKeyword !== keyword && k.relKeyword !== keyword.replace(/\s/g, ''); })
+          .map(function(k) {
+            var pc = parseAdCount(k.monthlyPcQcCnt);
+            var mobile = parseAdCount(k.monthlyMobileQcCnt);
+            return {
+              kw: k.relKeyword,
+              vol: pc + mobile,
+              pc: pc,
+              mobile: mobile,
+              comp: k.compIdx || ''
+            };
           })
-          .slice(0, 15)
-          .map(function(k) { return k.relKeyword; });
+          .sort(function(a, b) { return b.vol - a.vol; })
+          .slice(0, 15);
 
         if (adRelated.length > 0) {
           results.relatedKeywords = adRelated;
