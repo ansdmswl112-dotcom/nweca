@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-// VERSION: 2026-03-13-V3 (dual-trend + multi-sns + sentiment-neg)
+// VERSION: 2026-03-13-FINAL-v2 (dual-trend + multi-sns + sentiment-neg)
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,6 +51,11 @@ module.exports = async (req, res) => {
       plAvgDepth: 0,
       monthlyPcClkCnt: 0,
       monthlyMobileClkCnt: 0,
+      // ★ 추가 플랫폼
+      naverKinTotal: 0,
+      youtubeTotal: 0,
+      youtubeViewTotal: 0,
+      googleNewsTotal: 0,
       // 메타
       period: { from: dateFrom, to: dateTo, months: months },
       dataSource: {
@@ -61,8 +66,8 @@ module.exports = async (req, res) => {
         trend: '네이버 DataLab API'
       }
     },
-    trend: { naver: [] },
-    content: { blog: [], news: [], cafe: [], instagram: [], facebook: [] },
+    trend: { naver: [], daily: [], google: [] },
+    content: { blog: [], news: [], cafe: [], instagram: [], facebook: [], youtube: [], googleNews: [], kin: [] },
     relatedKeywords: [],
     contents: []
   };
@@ -91,17 +96,19 @@ module.exports = async (req, res) => {
 
         // ★ 기간 필터링 — postdate가 dateFrom~dateTo 범위 내인 것만
         var blogFiltered = blogItems.filter(function(item) {
-          if (!item.date) return true; // 날짜 없으면 포함
+          if (!item.date) return false; // 날짜 없으면 제외 (정확도 우선)
           return item.date >= dateFrom && item.date <= dateTo;
         });
 
         results.summary.naverBlogTotal = blogFiltered.length;
         results.content.blog = blogFiltered.slice(0, 20);
 
-        // 전체 100건 중 기간 내 비율로 추정 총량 계산
-        if (blogItems.length > 0 && blogFiltered.length > 0) {
+        // 기간 내 비율로 추정 (최소 10건 이상일 때만 추정)
+        if (blogItems.length >= 10 && blogFiltered.length > 0) {
           var filterRatio = blogFiltered.length / blogItems.length;
           results.summary.naverBlogTotal = Math.round(results.summary.naverBlogAll * filterRatio);
+        } else if (blogFiltered.length > 0) {
+          results.summary.naverBlogTotal = blogFiltered.length; // 소량이면 실제 건수 사용
         }
       } catch (e) { console.error('Blog error:', e.message); }
 
@@ -128,16 +135,18 @@ module.exports = async (req, res) => {
         });
 
         var newsFiltered = newsItems.filter(function(item) {
-          if (!item.date) return true;
+          if (!item.date) return false;
           return item.date >= dateFrom && item.date <= dateTo;
         });
 
         results.summary.naverNewsTotal = newsFiltered.length;
         results.content.news = newsFiltered.slice(0, 20);
 
-        if (newsItems.length > 0 && newsFiltered.length > 0) {
+        if (newsItems.length >= 10 && newsFiltered.length > 0) {
           var filterRatio = newsFiltered.length / newsItems.length;
           results.summary.naverNewsTotal = Math.round(results.summary.naverNewsAll * filterRatio);
+        } else if (newsFiltered.length > 0) {
+          results.summary.naverNewsTotal = newsFiltered.length;
         }
       } catch (e) { console.error('News error:', e.message); }
 
@@ -253,21 +262,25 @@ module.exports = async (req, res) => {
         }
       } catch (e) { console.error('DataLab error:', e.message); }
 
-      // 연관 키워드 (블로그+뉴스 제목에서 추출)
+      // 연관 키워드 (블로그+뉴스 제목에서 실제 등장 키워드 추출)
       try {
         var titleWords = {};
-        var stopwords = ['있는', '하는', '위한', '대한', '통한', '관련', '에서', '으로', '이상', '이하'];
-        results.content.blog.concat(results.content.news).forEach(function(item) {
-          var title = (item.title || '').replace(new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '').trim();
-          title.split(/[\s,·+\-\/|()[\]{}]+/).forEach(function(w) {
-            var clean = w.trim();
-            if (clean.length >= 2 && clean.length <= 12 && stopwords.indexOf(clean) === -1) {
+        var stopwords = ['있는', '하는', '위한', '대한', '통한', '관련', '에서', '으로', '이상', '이하', '것으로', '라며', '했다', '밝혔', '이번', '오는', '지난', '대해', '등을', '했습니다'];
+        var kwParts = keyword.split(/\s+/);
+        results.content.blog.concat(results.content.news).concat(results.content.cafe || []).forEach(function(item) {
+          var title = (item.title || '');
+          // 검색 키워드 자체와 그 부분 제거
+          kwParts.forEach(function(p) { if (p.length >= 2) title = title.replace(new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''); });
+          title.split(/[\s,·+\-\/|()[\]{}\"\'""''「」…]+/).forEach(function(w) {
+            var clean = w.trim().replace(/^[을를이가의에서도은는만과로]{0,1}/, '');
+            if (clean.length >= 2 && clean.length <= 15 && stopwords.indexOf(clean) === -1 && !/^\d+$/.test(clean)) {
               titleWords[clean] = (titleWords[clean] || 0) + 1;
             }
           });
         });
-        var sortedWords = Object.entries(titleWords).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 15);
-        results.relatedKeywords = sortedWords.map(function(pair) { return pair[0]; });
+        var sortedTitleKws = Object.entries(titleWords).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 20);
+        results.contentKeywords = sortedTitleKws.map(function(pair) { return { kw: pair[0], count: pair[1], source: 'content' }; });
+        results.relatedKeywords = sortedTitleKws.map(function(pair) { return pair[0]; });
       } catch (e) {}
     }
 
@@ -312,63 +325,71 @@ module.exports = async (req, res) => {
           results.summary.monthlyMobileClkCnt = parseAdCount(exact.monthlyMobileClkCnt);
         }
 
-        // 연관 키워드 (광고 API 기반 — 실제 검색량 포함)
-        var adRelated = keywordList
-          .filter(function(k) { return k.relKeyword !== keyword && k.relKeyword !== keyword.replace(/\s/g, ''); })
-          .map(function(k) {
-            var pc = parseAdCount(k.monthlyPcQcCnt);
-            var mobile = parseAdCount(k.monthlyMobileQcCnt);
-            return {
-              kw: k.relKeyword,
-              vol: pc + mobile,
-              pc: pc,
-              mobile: mobile,
-              comp: k.compIdx || ''
-            };
-          })
-          .sort(function(a, b) { return b.vol - a.vol; })
-          .slice(0, 15);
+        // 연관 키워드 — 콘텐츠 키워드에 실제 검색량 병합
+        var adKeywordMap = {};
+        keywordList.forEach(function(k) {
+          var pc = parseAdCount(k.monthlyPcQcCnt);
+          var mobile = parseAdCount(k.monthlyMobileQcCnt);
+          adKeywordMap[k.relKeyword] = { vol: pc + mobile, pc: pc, mobile: mobile, comp: k.compIdx || '' };
+        });
 
-        if (adRelated.length > 0) {
-          results.relatedKeywords = adRelated;
+        // 콘텐츠에서 추출한 키워드에 검색량 추가
+        if (results.contentKeywords && results.contentKeywords.length > 0) {
+          results.relatedKeywords = results.contentKeywords.map(function(ck) {
+            var adInfo = adKeywordMap[ck.kw] || {};
+            return {
+              kw: ck.kw,
+              count: ck.count,
+              vol: adInfo.vol || 0,
+              pc: adInfo.pc || 0,
+              mobile: adInfo.mobile || 0,
+              comp: adInfo.comp || '',
+              source: 'content'
+            };
+          });
+        } else {
+          // 콘텐츠 키워드 없으면 광고 API 키워드 사용
+          results.relatedKeywords = keywordList
+            .filter(function(k) { return k.relKeyword !== keyword && k.relKeyword !== keyword.replace(/\s/g, ''); })
+            .map(function(k) {
+              var pc = parseAdCount(k.monthlyPcQcCnt);
+              var mobile = parseAdCount(k.monthlyMobileQcCnt);
+              return { kw: k.relKeyword, count: 0, vol: pc + mobile, pc: pc, mobile: mobile, comp: k.compIdx || '', source: 'ad' };
+            })
+            .sort(function(a, b) { return b.vol - a.vol; })
+            .slice(0, 15);
         }
       } catch (e) { console.error('Ad API error:', e.message); }
     }
 
     // ═══════════════════════════════════════
-    // ⑥ 인스타그램 — 네이버 검색(팩트) → Meta API → SerpAPI
+    // ⑥ 인스타그램 — 구글 검색 기반 (기간 필터 적용)
     // ═══════════════════════════════════════
-    if (naverClientId && naverClientSecret) {
+    // 구글 tbs 기간 필터: cdr:1,cd_min:MM/DD/YYYY,cd_max:MM/DD/YYYY
+    var fromParts = dateFrom.split('-');
+    var toParts = dateTo.split('-');
+    var tbsParam = '&tbs=cdr:1,cd_min:' + fromParts[1] + '/' + fromParts[2] + '/' + fromParts[0] + ',cd_max:' + toParts[1] + '/' + toParts[2] + '/' + toParts[0];
+
+    if (serpApiKey) {
       try {
-        // 여러 검색어로 시도 (짧은 것부터)
-        var instaQueries = [keyword + ' 인스타', keyword + ' instagram', keyword + ' 인스타그램'];
-        var bestInstaTotal = 0;
-        var bestInstaItems = [];
-        
-        for (var iq = 0; iq < instaQueries.length; iq++) {
-          var instaRes = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(instaQueries[iq]) + '&display=10&sort=date', {
-            headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
-          });
-          var instaData = await instaRes.json();
-          if ((instaData.total || 0) > bestInstaTotal) {
-            bestInstaTotal = instaData.total || 0;
-            bestInstaItems = (instaData.items || []).map(function(item) {
-              return { title: stripHtml(item.title), snippet: stripHtml(item.description).substring(0, 60), link: item.link, source: item.bloggername || 'Instagram 관련', date: formatDate(item.postdate || '') };
-            });
-          }
-          if (bestInstaTotal > 0) break;
+        var instaRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:instagram.com&hl=ko&gl=kr&num=10' + tbsParam + '&api_key=' + serpApiKey);
+        var instaData = await instaRes.json();
+        var instaResults = (instaData.organic_results || []).slice(0, 10).map(function(item, i) {
+          var username = '';
+          try { var match = item.link.match(/instagram\.com\/([^\/\?]+)/); if (match) username = '@' + match[1]; } catch(e) {}
+          return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: username || 'Instagram', position: i + 1, date: item.date || '' };
+        });
+        var instaTotal = (instaData.search_information && instaData.search_information.total_results) || 0;
+        if (instaTotal > 0 || instaResults.length > 0) {
+          results.summary.instagramTotal = instaTotal;
+          results.content.instagram = instaResults;
+          results.summary.dataSource.instagram = '구글 검색 기간 내 (' + dateFrom + '~' + dateTo + ', ' + instaTotal.toLocaleString() + '건)';
         }
-        
-        if (bestInstaTotal > 0) {
-          results.summary.instagramTotal = bestInstaTotal;
-          results.content.instagram = bestInstaItems.slice(0, 10);
-          results.summary.dataSource.instagram = '네이버 검색 (팩트, ' + bestInstaTotal.toLocaleString() + '건)';
-        }
-      } catch (e) { console.error('Naver Instagram search error:', e.message); }
+      } catch (e) { console.error('SerpAPI Instagram error:', e.message); }
     }
 
-    // 방법2: Meta Graph API (심사 통과 후)
-    if (metaToken && metaIgUserId && results.summary.instagramTotal === 0) {
+    // 방법2: Meta Graph API (심사 통과 후 — 더 정확한 데이터로 덮어씀)
+    if (metaToken && metaIgUserId) {
       try {
         var tag = keyword.replace(/\s/g, '');
         var searchUrl = 'https://graph.facebook.com/v19.0/ig_hashtag_search?q=' + encodeURIComponent(tag) + '&user_id=' + metaIgUserId + '&access_token=' + metaToken;
@@ -380,74 +401,46 @@ module.exports = async (req, res) => {
           var infoUrl = 'https://graph.facebook.com/v19.0/' + hashtagId + '?fields=media_count&user_id=' + metaIgUserId + '&access_token=' + metaToken;
           var infoRes = await fetch(infoUrl);
           var infoData = await infoRes.json();
-          results.summary.instagramTotal = infoData.media_count || 0;
-          results.summary.dataSource.instagram = 'Instagram Graph API (팩트)';
+          if (infoData.media_count > 0) {
+            results.summary.instagramTotal = infoData.media_count;
+            results.summary.dataSource.instagram = 'Instagram Graph API (팩트, ' + infoData.media_count.toLocaleString() + '건)';
+          }
 
           var topUrl = 'https://graph.facebook.com/v19.0/' + hashtagId + '/top_media?user_id=' + metaIgUserId + '&fields=id,caption,like_count,comments_count,timestamp,permalink&access_token=' + metaToken + '&limit=10';
           var topRes = await fetch(topUrl);
           var topData = await topRes.json();
-          results.content.instagram = (topData.data || []).map(function(p) {
-            return {
-              title: (p.caption || '').substring(0, 80),
-              link: p.permalink || '',
-              snippet: (p.caption || '').substring(0, 40),
-              source: 'Instagram',
-              likes: p.like_count || 0,
-              comments: p.comments_count || 0,
-              date: p.timestamp || ''
-            };
-          });
+          if (topData.data && topData.data.length > 0) {
+            results.content.instagram = (topData.data).map(function(p) {
+              return { title: (p.caption || '').substring(0, 80), link: p.permalink || '', snippet: (p.caption || '').substring(0, 40), source: 'Instagram', likes: p.like_count || 0, comments: p.comments_count || 0, date: p.timestamp || '' };
+            });
+          }
         }
       } catch (e) { console.error('Instagram Meta error:', e.message); }
     }
 
-    // SerpAPI 폴백 (Meta 안 될 때)
-    if (serpApiKey && results.summary.instagramTotal === 0) {
+    // ═══════════════════════════════════════
+    // ⑦ 페이스북 — 구글 검색 기반 (실제 게시물 수)
+    // ═══════════════════════════════════════
+    // 방법1: SerpAPI — "유정근 site:facebook.com" → 구글이 인덱싱한 실제 페북 게시물 수
+    if (serpApiKey) {
       try {
-        var instaRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:instagram.com&hl=ko&gl=kr&num=10&api_key=' + serpApiKey);
-        var instaData = await instaRes.json();
-        results.content.instagram = (instaData.organic_results || []).slice(0, 10).map(function(item, i) {
-          var username = '';
-          try { var match = item.link.match(/instagram\.com\/([^\/\?]+)/); if (match) username = '@' + match[1]; } catch(e) {}
-          return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: username || 'Instagram', position: i + 1 };
+        var fbSerpRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:facebook.com&hl=ko&gl=kr&num=10' + tbsParam + '&api_key=' + serpApiKey);
+        var fbSerpData = await fbSerpRes.json();
+        var fbResults = (fbSerpData.organic_results || []).slice(0, 10).map(function(item, i) {
+          var pageName = '';
+          try { var match = item.link.match(/facebook\.com\/([^\/\?]+)/); if (match) pageName = match[1]; } catch(e) {}
+          return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: pageName || 'Facebook', position: i + 1 };
         });
-        results.summary.instagramTotal = (instaData.search_information && instaData.search_information.total_results) || results.content.instagram.length;
-        results.summary.dataSource.instagram = 'SerpAPI 추정 (' + results.summary.instagramTotal.toLocaleString() + '건)';
-      } catch (e) { console.error('SerpAPI Instagram error:', e.message); }
+        var fbTotal = (fbSerpData.search_information && fbSerpData.search_information.total_results) || 0;
+        if (fbTotal > 0 || fbResults.length > 0) {
+          results.summary.facebookTotal = fbTotal;
+          results.content.facebook = fbResults;
+          results.summary.dataSource.facebook = '구글 검색 기간 내 (' + dateFrom + '~' + dateTo + ', ' + fbTotal.toLocaleString() + '건)';
+        }
+      } catch (e) { console.error('SerpAPI Facebook error:', e.message); }
     }
 
-    // ═══════════════════════════════════════
-    // ⑦ 페이스북 — 네이버 검색(팩트) → Meta API → SerpAPI
-    // ═══════════════════════════════════════
-    if (naverClientId && naverClientSecret) {
-      try {
-        var fbQueries = [keyword + ' 페이스북', keyword + ' facebook', keyword + ' FB'];
-        var bestFbTotal = 0;
-        var bestFbItems = [];
-        
-        for (var fq = 0; fq < fbQueries.length; fq++) {
-          var fbRes2 = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(fbQueries[fq]) + '&display=10&sort=date', {
-            headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
-          });
-          var fbData2 = await fbRes2.json();
-          if ((fbData2.total || 0) > bestFbTotal) {
-            bestFbTotal = fbData2.total || 0;
-            bestFbItems = (fbData2.items || []).map(function(item) {
-              return { title: stripHtml(item.title), snippet: stripHtml(item.description).substring(0, 60), link: item.link, source: item.bloggername || 'Facebook 관련', date: formatDate(item.postdate || '') };
-            });
-          }
-          if (bestFbTotal > 0) break;
-        }
-        
-        if (bestFbTotal > 0) {
-          results.summary.facebookTotal = bestFbTotal;
-          results.content.facebook = bestFbItems.slice(0, 10);
-          results.summary.dataSource.facebook = '네이버 검색 (팩트, ' + bestFbTotal.toLocaleString() + '건)';
-        }
-      } catch (e) { console.error('Naver Facebook search error:', e.message); }
-    }
-
-    // 방법2: Meta Graph API
+    // 방법2: Meta Graph API (페이지 정보)
     if (metaToken && results.summary.facebookTotal === 0) {
       try {
         var fbUrl = 'https://graph.facebook.com/v19.0/search?q=' + encodeURIComponent(keyword) + '&type=page&fields=name,fan_count,link,category,about&access_token=' + metaToken + '&limit=10';
@@ -468,18 +461,79 @@ module.exports = async (req, res) => {
       } catch (e) { console.error('Facebook error:', e.message); }
     }
 
-    if (serpApiKey && results.summary.facebookTotal === 0) {
+    // ═══════════════════════════════════════
+    // ⑧ 네이버 지식iN (보유 API — 추가비용 0원)
+    // ═══════════════════════════════════════
+    if (naverClientId && naverClientSecret) {
       try {
-        var fbSerpRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:facebook.com&hl=ko&gl=kr&num=10&api_key=' + serpApiKey);
-        var fbSerpData = await fbSerpRes.json();
-        results.content.facebook = (fbSerpData.organic_results || []).slice(0, 10).map(function(item, i) {
-          var pageName = '';
-          try { var match = item.link.match(/facebook\.com\/([^\/\?]+)/); if (match) pageName = match[1]; } catch(e) {}
-          return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: pageName || 'Facebook', position: i + 1 };
+        var kinRes = await fetch('https://openapi.naver.com/v1/search/kin.json?query=' + encodeURIComponent(keyword) + '&display=10&sort=date', {
+          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
         });
-        results.summary.facebookTotal = (fbSerpData.search_information && fbSerpData.search_information.total_results) || results.content.facebook.length;
-        results.summary.dataSource.facebook = 'SerpAPI 추정 (' + results.summary.facebookTotal.toLocaleString() + '건)';
-      } catch (e) { console.error('SerpAPI Facebook error:', e.message); }
+        var kinData = await kinRes.json();
+        results.summary.naverKinTotal = kinData.total || 0;
+        results.content.kin = (kinData.items || []).slice(0, 5).map(function(item) {
+          return { title: stripHtml(item.title), description: stripHtml(item.description).substring(0, 60), link: item.link, date: '' };
+        });
+        results.summary.dataSource.kin = '네이버 지식iN API (' + (kinData.total || 0).toLocaleString() + '건)';
+      } catch (e) { console.error('Naver KIN error:', e.message); }
+    }
+
+    // ═══════════════════════════════════════
+    // ⑨ 유튜브 (구글 검색 기간 필터 적용)
+    // ═══════════════════════════════════════
+    if (serpApiKey) {
+      try {
+        var ytRes = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:youtube.com&hl=ko&gl=kr&num=10' + tbsParam + '&api_key=' + serpApiKey);
+        var ytData = await ytRes.json();
+        var ytOrganic = (ytData.organic_results || []).slice(0, 10);
+        results.content.youtube = ytOrganic.map(function(v) {
+          var channel = '';
+          try { var match = v.link.match(/youtube\.com\/(watch|channel|@)([^\/\?&]+)/); if (match) channel = match[2]; } catch(e) {}
+          return { title: v.title || '', link: v.link || '', views: 0, channel: channel || v.source || '', date: v.date || '', snippet: v.snippet || '' };
+        });
+        var ytTotal = (ytData.search_information && ytData.search_information.total_results) || ytOrganic.length;
+        results.summary.youtubeTotal = ytTotal;
+        results.summary.dataSource.youtube = '구글 검색 기간 내 YouTube (' + dateFrom + '~' + dateTo + ', ' + ytTotal.toLocaleString() + '건)';
+      } catch (e) { console.error('YouTube error:', e.message); }
+    }
+
+    // ═══════════════════════════════════════
+    // ⑩ 구글 뉴스 (기간 필터 적용)
+    // ═══════════════════════════════════════
+    if (serpApiKey) {
+      try {
+        var gnRes = await fetch('https://serpapi.com/search.json?engine=google_news&q=' + encodeURIComponent(keyword) + '+after:' + dateFrom + '+before:' + dateTo + '&hl=ko&gl=kr&api_key=' + serpApiKey);
+        var gnData = await gnRes.json();
+        var gnResults = (gnData.news_results || []).slice(0, 10);
+        results.content.googleNews = gnResults.map(function(n) {
+          return { title: n.title || '', link: n.link || '', source: (n.source && n.source.name) || '', date: n.date || '', snippet: n.snippet || '' };
+        });
+        results.summary.googleNewsTotal = gnResults.length;
+        results.summary.dataSource.googleNews = '구글 뉴스 (최신 ' + gnResults.length + '건)';
+      } catch (e) { console.error('Google News error:', e.message); }
+    }
+
+    // ═══════════════════════════════════════
+    // ⑪ 구글 트렌드 (SerpAPI Google Trends — 추가비용 0원)
+    // ═══════════════════════════════════════
+    if (serpApiKey) {
+      try {
+        var gtRes = await fetch('https://serpapi.com/search.json?engine=google_trends&q=' + encodeURIComponent(keyword) + '&data_type=TIMESERIES&date=' + dateFrom.replace(/-/g, '-') + ' ' + dateTo.replace(/-/g, '-') + '&hl=ko&gl=kr&api_key=' + serpApiKey);
+        var gtData = await gtRes.json();
+        if (gtData.interest_over_time && gtData.interest_over_time.timeline_data) {
+          results.trend.google = gtData.interest_over_time.timeline_data.map(function(d) {
+            return { date: d.date || '', value: (d.values && d.values[0] && d.values[0].extracted_value) || 0 };
+          });
+          // 구글 트렌드 방향 계산
+          var gtd = results.trend.google;
+          if (gtd.length >= 4) {
+            var gRecent = gtd.slice(-3).reduce(function(s, d) { return s + d.value; }, 0) / 3;
+            var gOlder = gtd.slice(-6, -3).reduce(function(s, d) { return s + d.value; }, 0) / Math.max(gtd.slice(-6, -3).length, 1);
+            results.summary.googleTrendDirection = gRecent > gOlder * 1.1 ? '상승' : gRecent < gOlder * 0.9 ? '하락' : '유지';
+          }
+        }
+        results.summary.dataSource.googleTrend = '구글 트렌드 (Google Trends)';
+      } catch (e) { console.error('Google Trends error:', e.message); }
     }
 
     // ═══════════════════════════════════════
