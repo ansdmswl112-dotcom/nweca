@@ -312,7 +312,9 @@ module.exports = async (req, res) => {
         var chName=(v.channel&&v.channel.name)||'';
         var chLink=(v.channel&&v.channel.link)||'';
         var isShort=(v.link||'').includes('/shorts/');
-        var existing=addYt({title:v.title||'',link:v.link||'',views:vw,channel:chName,channelLink:chLink,date:pd,type:isShort?'shorts':'video',snippet:(v.description||'').substring(0,80),inPeriod:pd>=dateFrom&&pd<=dateTo});
+        // 날짜 없으면 포함 (YouTube가 반환한 것 신뢰), 날짜 있으면 기간 검증
+        var inP=pd?(pd>=dateFrom&&pd<=dateTo):true;
+        var existing=addYt({title:v.title||'',link:v.link||'',views:vw,channel:chName,channelLink:chLink,date:pd,type:isShort?'shorts':'video',snippet:(v.description||'').substring(0,80),inPeriod:inP});
         if(!existing){
           // 중복이면 조회수만 업데이트
           var key=(v.link||'').replace(/[?&].*$/,'').replace(/\/$/,'');
@@ -333,16 +335,15 @@ module.exports = async (req, res) => {
         chs.forEach(function(ch){if(ch&&ch.title)R.summary.youtubeChannel={name:ch.title,link:ch.link||'',subscribers:ch.subscribers||'',videos:ch.video_count||''};});
       }
     });
-    // B) 기간 내 콘텐츠만 필터 (날짜 파싱 성공한 것)
-    var ytInPeriod=ytAllItems.filter(function(v){return v.inPeriod||v.type==='shorts';});
-    var ytOutPeriod=ytAllItems.filter(function(v){return !v.inPeriod&&v.type!=='shorts'&&v.date;});
-    // 조회수순 정렬
-    ytInPeriod.sort(function(a,b){if(a.type==='shorts'&&b.type!=='shorts')return 1;if(a.type!=='shorts'&&b.type==='shorts')return -1;return(b.views||0)-(a.views||0);});
-    R.content.youtube=ytInPeriod;
-    R.summary.youtubeTotal=ytInPeriod.length;
-    R.summary.youtubeViewTotal=ytInPeriod.reduce(function(s,v){return s+v.views;},0);
-    R.summary.dataSource.youtube='YouTube 직접 검색 (기간 '+dateFrom+'~'+dateTo+', 기간 내 '+ytInPeriod.length+'건'+(ytOutPeriod.length>0?', 기간 외 '+ytOutPeriod.length+'건 제외':'')+')';
-    // ── 구글뉴스 ──
+    // B) 기간 필터: 날짜 확인된 것 중 기간 외만 제외 (날짜 없으면 포함)
+    var ytFiltered=ytAllItems.filter(function(v){return v.inPeriod;});
+    var ytExcluded=ytAllItems.filter(function(v){return !v.inPeriod;});
+    // 조회수순 정렬 (숏츠는 뒤로)
+    ytFiltered.sort(function(a,b){if(a.type==='shorts'&&b.type!=='shorts')return 1;if(a.type!=='shorts'&&b.type==='shorts')return -1;return(b.views||0)-(a.views||0);});
+    R.content.youtube=ytFiltered;
+    R.summary.youtubeTotal=ytFiltered.length;
+    R.summary.youtubeViewTotal=ytFiltered.reduce(function(s,v){return s+v.views;},0);
+    R.summary.dataSource.youtube='YouTube ('+dateFrom+'~'+dateTo+', '+ytFiltered.length+'건'+(ytExcluded.length>0?', 기간 외 '+ytExcluded.length+'건 제외':'')+', 조회 '+R.summary.youtubeViewTotal.toLocaleString()+')';    // ── 구글뉴스 ──
     if(gnD){
       var gn=(gnD.news_results||[]).slice(0,10);
       R.content.googleNews=gn.map(function(n){return{title:n.title||'',link:n.link||'',source:(n.source&&n.source.name)||'',date:n.date||'',snippet:n.snippet||''};});
