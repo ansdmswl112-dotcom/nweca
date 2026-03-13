@@ -89,16 +89,13 @@ module.exports = async (req, res) => {
     if (ytKey) tasks.push(fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + encodeURIComponent(keyword) + '&type=video&order=date&maxResults=20&publishedAfter=' + ytAfter + '&publishedBefore=' + ytBefore + '&key=' + ytKey).then(r => r.json()).catch(() => null));
     else tasks.push(Promise.resolve(null));
 
-    // [9] Google CSE — 인스타  [10] Google CSE — 페북
-    if (gKey && gCx) {
-      var drFrom = dateFrom.replace(/-/g, '');
-      var drTo = dateTo.replace(/-/g, '');
-      tasks.push(fetch('https://www.googleapis.com/customsearch/v1?key=' + gKey + '&cx=' + gCx + '&q=' + encodeURIComponent(keyword) + '+site:instagram.com&num=10&sort=date:r:' + drFrom + ':' + drTo).then(r => r.json()).catch(() => null));
-      tasks.push(fetch('https://www.googleapis.com/customsearch/v1?key=' + gKey + '&cx=' + gCx + '&q=' + encodeURIComponent(keyword) + '+site:facebook.com&num=10&sort=date:r:' + drFrom + ':' + drTo).then(r => r.json()).catch(() => null));
-    } else {
-      tasks.push(Promise.resolve(null));
-      tasks.push(Promise.resolve(null));
-    }
+    // [9] 인스타  [10] 페북 (SerpAPI 구글 검색 — 기간필터)
+    var fp = dateFrom.split('-'), tp = dateTo.split('-');
+    var tbs = '&tbs=cdr:1,cd_min:' + fp[1] + '/' + fp[2] + '/' + fp[0] + ',cd_max:' + tp[1] + '/' + tp[2] + '/' + tp[0];
+    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:instagram.com&hl=ko&gl=kr&num=10' + tbs + '&api_key=' + serpKey).then(r => r.json()).catch(() => null));
+    else tasks.push(Promise.resolve(null));
+    if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '+site:facebook.com&hl=ko&gl=kr&num=10' + tbs + '&api_key=' + serpKey).then(r => r.json()).catch(() => null));
+    else tasks.push(Promise.resolve(null));
 
     // [11] SerpAPI 구글뉴스  [12] SerpAPI 구글트렌드 (이것만 SerpAPI)
     if (serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_news&q=' + encodeURIComponent(keyword) + '+after:' + dateFrom + '+before:' + dateTo + '&hl=ko&gl=kr&api_key=' + serpKey).then(r => r.json()).catch(() => null));
@@ -295,21 +292,21 @@ module.exports = async (req, res) => {
     R.summary.dataSource.youtube = 'YouTube Data API (기간 ' + dateFrom + '~' + dateTo + ', ' + ytItems.length + '건, 조회 ' + ytViews.toLocaleString() + ')';
 
     // ════════════════════════════════════════
-    // 인스타그램 — Google Custom Search
+    // 인스타그램 — SerpAPI 구글 검색
     // ════════════════════════════════════════
-    if (instaD && instaD.items) {
-      R.content.instagram = instaD.items.map(function(i) { var u = ''; try { var m = i.link.match(/instagram\.com\/([^\/\?]+)/); if (m) u = '@' + m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: u || 'Instagram', date: '' }; });
-      R.summary.instagramTotal = (instaD.searchInformation && parseInt(instaD.searchInformation.totalResults)) || instaD.items.length;
-      R.summary.dataSource.instagram = 'Google CSE→인스타 (' + R.summary.instagramTotal.toLocaleString() + '건, 총게시물수 공유포함)';
+    if (instaD && instaD.organic_results && instaD.organic_results.length > 0) {
+      R.content.instagram = instaD.organic_results.map(function(i) { var u = ''; try { var m = i.link.match(/instagram\.com\/([^\/\?]+)/); if (m) u = '@' + m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: u || 'Instagram', date: i.date || '' }; });
+      R.summary.instagramTotal = (instaD.search_information && instaD.search_information.total_results) || instaD.organic_results.length;
+      R.summary.dataSource.instagram = '구글→인스타 (' + R.summary.instagramTotal.toLocaleString() + '건, 총게시물수 공유포함)';
     }
 
     // ════════════════════════════════════════
-    // 페이스북 — Google Custom Search
+    // 페이스북 — SerpAPI 구글 검색
     // ════════════════════════════════════════
-    if (fbD && fbD.items) {
-      R.content.facebook = fbD.items.map(function(i) { var p = ''; try { var m = i.link.match(/facebook\.com\/([^\/\?]+)/); if (m) p = m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: p || 'Facebook', date: '' }; });
-      R.summary.facebookTotal = (fbD.searchInformation && parseInt(fbD.searchInformation.totalResults)) || fbD.items.length;
-      R.summary.dataSource.facebook = 'Google CSE→페이스북 (' + R.summary.facebookTotal.toLocaleString() + '건, 총게시물수 공유포함)';
+    if (fbD && fbD.organic_results && fbD.organic_results.length > 0) {
+      R.content.facebook = fbD.organic_results.map(function(i) { var p = ''; try { var m = i.link.match(/facebook\.com\/([^\/\?]+)/); if (m) p = m[1]; } catch(e) {} return { title: i.title || '', snippet: i.snippet || '', link: i.link, source: p || 'Facebook', date: i.date || '' }; });
+      R.summary.facebookTotal = (fbD.search_information && fbD.search_information.total_results) || fbD.organic_results.length;
+      R.summary.dataSource.facebook = '구글→페이스북 (' + R.summary.facebookTotal.toLocaleString() + '건, 총게시물수 공유포함)';
     }
 
     // ════════════════════════════════════════
