@@ -172,14 +172,8 @@ module.exports = async (req, res) => {
       // ④ 네이버 DataLab 트렌드
       // ═══════════════════════════════════════
       try {
-        // 기간에 따라 timeUnit 자동 결정
-        var daysDiff = Math.round((new Date(dateTo) - new Date(dateFrom)) / 86400000);
-        var timeUnit = daysDiff <= 31 ? 'date' : 'month';
-        // DataLab은 최소 31일이 필요하므로 짧은 기간은 startDate를 늘림
-        var dlFrom = dateFrom;
-        if (daysDiff < 31) {
-          dlFrom = new Date(new Date(dateTo).getTime() - 31 * 86400000).toISOString().split('T')[0];
-        }
+        // ★ 항상 12개월 트렌드 데이터 수집 (모멘텀/계절성 분석용)
+        var trendFrom = new Date(new Date(dateTo).getTime() - 365 * 86400000).toISOString().split('T')[0];
         var datalabRes = await fetch('https://openapi.naver.com/v1/datalab/search', {
           method: 'POST',
           headers: {
@@ -188,9 +182,9 @@ module.exports = async (req, res) => {
             'X-Naver-Client-Secret': naverClientSecret
           },
           body: JSON.stringify({
-            startDate: dlFrom,
+            startDate: trendFrom,
             endDate: dateTo,
-            timeUnit: timeUnit,
+            timeUnit: 'month',
             keywordGroups: [{ groupName: keyword, keywords: [keyword] }]
           })
         });
@@ -290,33 +284,31 @@ module.exports = async (req, res) => {
     // ═══════════════════════════════════════
     // ⑥ 인스타그램 — 네이버 검색(팩트) → Meta API → SerpAPI
     // ═══════════════════════════════════════
-    // 방법1: 네이버에서 "키워드 인스타그램" 검색 (팩트)
     if (naverClientId && naverClientSecret) {
       try {
-        var instaNaverRes = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(keyword + ' 인스타그램') + '&display=10&sort=date', {
-          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
-        });
-        var instaNaverData = await instaNaverRes.json();
-        var instaNaverTotal = instaNaverData.total || 0;
-        // 네이버 뉴스에서도 검색
-        var instaNewsRes = await fetch('https://openapi.naver.com/v1/search/news.json?query=' + encodeURIComponent(keyword + ' 인스타그램') + '&display=5&sort=date', {
-          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
-        });
-        var instaNewsData = await instaNewsRes.json();
-        instaNaverTotal += (instaNewsData.total || 0);
-
-        if (instaNaverTotal > 0) {
-          results.summary.instagramTotal = instaNaverTotal;
-          results.summary.dataSource.instagram = '네이버 검색 "' + keyword + ' 인스타그램" (팩트, ' + instaNaverTotal.toLocaleString() + '건)';
-          results.content.instagram = (instaNaverData.items || []).slice(0, 10).map(function(item) {
-            return {
-              title: stripHtml(item.title),
-              snippet: stripHtml(item.description).substring(0, 40),
-              link: item.link,
-              source: item.bloggername || 'Instagram 관련',
-              date: formatDate(item.postdate || '')
-            };
+        // 여러 검색어로 시도 (짧은 것부터)
+        var instaQueries = [keyword + ' 인스타', keyword + ' instagram', keyword + ' 인스타그램'];
+        var bestInstaTotal = 0;
+        var bestInstaItems = [];
+        
+        for (var iq = 0; iq < instaQueries.length; iq++) {
+          var instaRes = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(instaQueries[iq]) + '&display=10&sort=date', {
+            headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
           });
+          var instaData = await instaRes.json();
+          if ((instaData.total || 0) > bestInstaTotal) {
+            bestInstaTotal = instaData.total || 0;
+            bestInstaItems = (instaData.items || []).map(function(item) {
+              return { title: stripHtml(item.title), snippet: stripHtml(item.description).substring(0, 60), link: item.link, source: item.bloggername || 'Instagram 관련', date: formatDate(item.postdate || '') };
+            });
+          }
+          if (bestInstaTotal > 0) break;
+        }
+        
+        if (bestInstaTotal > 0) {
+          results.summary.instagramTotal = bestInstaTotal;
+          results.content.instagram = bestInstaItems.slice(0, 10);
+          results.summary.dataSource.instagram = '네이버 검색 (팩트, ' + bestInstaTotal.toLocaleString() + '건)';
         }
       } catch (e) { console.error('Naver Instagram search error:', e.message); }
     }
@@ -365,40 +357,38 @@ module.exports = async (req, res) => {
           try { var match = item.link.match(/instagram\.com\/([^\/\?]+)/); if (match) username = '@' + match[1]; } catch(e) {}
           return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: username || 'Instagram', position: i + 1 };
         });
-        results.summary.instagramTotal = results.content.instagram.length;
-        results.summary.dataSource.instagram = 'SerpAPI (구글 검색 기반, ' + results.content.instagram.length + '건 수집)';
+        results.summary.instagramTotal = (instaData.search_information && instaData.search_information.total_results) || results.content.instagram.length;
+        results.summary.dataSource.instagram = 'SerpAPI 추정 (' + results.summary.instagramTotal.toLocaleString() + '건)';
       } catch (e) { console.error('SerpAPI Instagram error:', e.message); }
     }
 
     // ═══════════════════════════════════════
     // ⑦ 페이스북 — 네이버 검색(팩트) → Meta API → SerpAPI
     // ═══════════════════════════════════════
-    // 방법1: 네이버에서 "키워드 페이스북" 검색 (팩트)
     if (naverClientId && naverClientSecret) {
       try {
-        var fbNaverRes = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(keyword + ' 페이스북') + '&display=10&sort=date', {
-          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
-        });
-        var fbNaverData = await fbNaverRes.json();
-        var fbNaverTotal = fbNaverData.total || 0;
-        var fbNewsRes = await fetch('https://openapi.naver.com/v1/search/news.json?query=' + encodeURIComponent(keyword + ' 페이스북') + '&display=5&sort=date', {
-          headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
-        });
-        var fbNewsData = await fbNewsRes.json();
-        fbNaverTotal += (fbNewsData.total || 0);
-
-        if (fbNaverTotal > 0) {
-          results.summary.facebookTotal = fbNaverTotal;
-          results.summary.dataSource.facebook = '네이버 검색 "' + keyword + ' 페이스북" (팩트, ' + fbNaverTotal.toLocaleString() + '건)';
-          results.content.facebook = (fbNaverData.items || []).slice(0, 10).map(function(item) {
-            return {
-              title: stripHtml(item.title),
-              snippet: stripHtml(item.description).substring(0, 40),
-              link: item.link,
-              source: item.bloggername || 'Facebook 관련',
-              date: formatDate(item.postdate || '')
-            };
+        var fbQueries = [keyword + ' 페이스북', keyword + ' facebook', keyword + ' FB'];
+        var bestFbTotal = 0;
+        var bestFbItems = [];
+        
+        for (var fq = 0; fq < fbQueries.length; fq++) {
+          var fbRes2 = await fetch('https://openapi.naver.com/v1/search/blog.json?query=' + encodeURIComponent(fbQueries[fq]) + '&display=10&sort=date', {
+            headers: { 'X-Naver-Client-Id': naverClientId, 'X-Naver-Client-Secret': naverClientSecret }
           });
+          var fbData2 = await fbRes2.json();
+          if ((fbData2.total || 0) > bestFbTotal) {
+            bestFbTotal = fbData2.total || 0;
+            bestFbItems = (fbData2.items || []).map(function(item) {
+              return { title: stripHtml(item.title), snippet: stripHtml(item.description).substring(0, 60), link: item.link, source: item.bloggername || 'Facebook 관련', date: formatDate(item.postdate || '') };
+            });
+          }
+          if (bestFbTotal > 0) break;
+        }
+        
+        if (bestFbTotal > 0) {
+          results.summary.facebookTotal = bestFbTotal;
+          results.content.facebook = bestFbItems.slice(0, 10);
+          results.summary.dataSource.facebook = '네이버 검색 (팩트, ' + bestFbTotal.toLocaleString() + '건)';
         }
       } catch (e) { console.error('Naver Facebook search error:', e.message); }
     }
@@ -433,8 +423,8 @@ module.exports = async (req, res) => {
           try { var match = item.link.match(/facebook\.com\/([^\/\?]+)/); if (match) pageName = match[1]; } catch(e) {}
           return { title: item.title || '', snippet: item.snippet || '', link: item.link, source: pageName || 'Facebook', position: i + 1 };
         });
-        results.summary.facebookTotal = results.content.facebook.length;
-        results.summary.dataSource.facebook = 'SerpAPI (구글 검색 기반, ' + results.content.facebook.length + '건 수집)';
+        results.summary.facebookTotal = (fbSerpData.search_information && fbSerpData.search_information.total_results) || results.content.facebook.length;
+        results.summary.dataSource.facebook = 'SerpAPI 추정 (' + results.summary.facebookTotal.toLocaleString() + '건)';
       } catch (e) { console.error('SerpAPI Facebook error:', e.message); }
     }
 
