@@ -306,9 +306,10 @@ module.exports = async (req, res) => {
     ytItems.sort(function(a, b) { return (b.views || 0) - (a.views || 0); });
 
     R.content.youtube = ytItems;
-    R.summary.youtubeTotal = ytGoogleTotal > 0 ? ytGoogleTotal : ytItems.length;
+    // 건수: 구글과 YouTube 직접 중 더 큰 값 사용 (구글이 누락할 수 있으므로)
+    R.summary.youtubeTotal = Math.max(ytGoogleTotal, ytItems.length);
     R.summary.youtubeViewTotal = ytViews;
-    R.summary.dataSource.youtube = 'YouTube (' + dateFrom + '~' + dateTo + ', ' + R.summary.youtubeTotal + '건, 콘텐츠 ' + ytItems.length + '개, 조회 ' + ytViews.toLocaleString() + ')';
+    R.summary.dataSource.youtube = 'YouTube (' + dateFrom + '~' + dateTo + ', 구글 ' + ytGoogleTotal + '건 + YouTube ' + ytItems.length + '개, 조회 ' + ytViews.toLocaleString() + ')';
 
     // ════════════════════════════════════════
     // 구글뉴스 + 구글트렌드
