@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
     // [9] SerpAPI 유튜브 직접 (최신순 정렬 + 숏츠)
     if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=youtube&search_query='+encodeURIComponent(keyword)+'&sp=CAI%253D&hl=ko&gl=kr&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
-    // [10] SerpAPI 유튜브 기간 건수 (구글 검색 기간필터)
+    // [10] SerpAPI 유튜브 기간 건수 (구글 검색 기간필터 — 메인 소스)
     if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:youtube.com&hl=ko&gl=kr&num=20'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
     // [11] SerpAPI 구글뉴스
@@ -96,11 +96,18 @@ module.exports = async (req, res) => {
     // [12] SerpAPI 구글트렌드
     if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?engine=google_trends&q='+encodeURIComponent(keyword)+'&data_type=TIMESERIES&date='+dateFrom+' '+dateTo+'&hl=ko&gl=kr&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
     else tasks.push(Promise.resolve(null));
+    // [13] SerpAPI 카페 기간필터 (네이버 카페는 날짜 없어서)
+    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:cafe.naver.com&hl=ko&gl=kr&num=10'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
+    else tasks.push(Promise.resolve(null));
+    // [14] SerpAPI 지식iN 기간필터
+    if(serpKey) tasks.push(fetch('https://serpapi.com/search.json?q='+encodeURIComponent(keyword)+'+site:kin.naver.com&hl=ko&gl=kr&num=10'+tbs+'&api_key='+serpKey).then(r=>r.json()).catch(()=>null));
+    else tasks.push(Promise.resolve(null));
 
     var results = await Promise.all(tasks);
     var blogD=results[0], newsD=results[1], cafeD=results[2], kinD=results[3];
     var dl12D=results[4], dlDayD=results[5], adD=results[6];
     var instaD=results[7], fbD=results[8], ytD=results[9], ytGD=results[10], gnD=results[11], gtD=results[12];
+    var cafeSerpD=results[13], kinSerpD=results[14];
 
     // ── 블로그 처리 ──
     if(blogD&&blogD.items){
@@ -118,16 +125,29 @@ module.exports = async (req, res) => {
       R.content.news=nf.slice(0,20);
       R.summary.naverNewsTotal=ni.length>=10&&nf.length>0?Math.round(R.summary.naverNewsAll*(nf.length/ni.length)):nf.length;
     }
-    // ── 카페 처리 ──
-    if(cafeD&&cafeD.items){
+    // ── 카페 처리 (기간 필터) ──
+    if(cafeSerpD&&cafeSerpD.organic_results){
+      // 구글 기간필터 결과 사용 (네이버 카페 API는 날짜 없음)
+      var co=(cafeSerpD.organic_results||[]).map(function(i){return{title:sh(i.title||''),description:sh(i.snippet||''),link:i.link,source:'카페',date:i.date||''};});
+      var ct=(cafeSerpD.search_information&&cafeSerpD.search_information.total_results)||co.length;
+      R.content.cafe=co;
+      R.summary.naverCafeTotal=ct;
+      R.summary.naverCafeAll=cafeD?(cafeD.total||0):ct;
+    }else if(cafeD&&cafeD.items){
+      // SerpAPI 없으면 네이버 비율 추정
       R.summary.naverCafeAll=cafeD.total||0;
       R.content.cafe=(cafeD.items||[]).slice(0,10).map(function(i){return{title:sh(i.title),description:sh(i.description),link:i.link,source:i.cafename||'카페',date:''};});
       var br=R.summary.naverBlogAll>0?R.summary.naverBlogTotal/R.summary.naverBlogAll:1;
       var nr=R.summary.naverNewsAll>0?R.summary.naverNewsTotal/R.summary.naverNewsAll:1;
       R.summary.naverCafeTotal=Math.round((cafeD.total||0)*(br+nr)/2);
     }
-    // ── 지식iN ──
-    if(kinD&&kinD.items){
+    // ── 지식iN (기간 필터) ──
+    if(kinSerpD&&kinSerpD.organic_results){
+      var ko2=(kinSerpD.organic_results||[]).map(function(i){return{title:sh(i.title||''),description:sh(i.snippet||'').substring(0,60),link:i.link,date:i.date||''};});
+      var kt=(kinSerpD.search_information&&kinSerpD.search_information.total_results)||ko2.length;
+      R.content.kin=ko2;
+      R.summary.naverKinTotal=kt;
+    }else if(kinD&&kinD.items){
       R.summary.naverKinTotal=kinD.total||0;
       R.content.kin=(kinD.items||[]).slice(0,5).map(function(i){return{title:sh(i.title),description:sh(i.description).substring(0,60),link:i.link,date:''};});
     }
@@ -205,33 +225,28 @@ module.exports = async (req, res) => {
       var ft=(fbD.search_information&&fbD.search_information.total_results)||fo.length;
       if(ft>0||fo.length>0){R.summary.facebookTotal=ft;R.content.facebook=fo;R.summary.dataSource.facebook='구글 검색 기간 내 ('+dateFrom+'~'+dateTo+', '+ft.toLocaleString()+'건)';}
     }
-    // ── 유튜브 (구글 기간필터 + YouTube 직접 병합) ──
+    // ── 유튜브 (기간 내 콘텐츠만 — 구글 기간필터 메인 + YouTube 조회수 병합) ──
     var ytAllItems=[];
     var ytTotalViews=0;
-    // A) 구글 검색 기간 필터 결과 (기간 내 콘텐츠 — 메인)
+    // A) 구글 검색 기간 필터 결과 — 이것만 기간 내 보장
     if(ytGD&&ytGD.organic_results){
       ytGD.organic_results.forEach(function(v){
         ytAllItems.push({title:v.title||'',link:v.link||'',views:0,channel:v.source||'',date:v.date||'',type:'video',snippet:v.snippet||''});
       });
     }
-    // B) YouTube 직접 검색 (조회수 + 숏츠)
+    // B) YouTube 직접 검색에서 조회수만 가져와서 A에 병합 + 숏츠 추가
     if(ytD){
-      var yv=(ytD.video_results||[]).slice(0,15);
-      var ys=(ytD.shorts_results||[]).slice(0,5);
-      yv.forEach(function(v){
+      var yvMap={};
+      (ytD.video_results||[]).forEach(function(v){
         var vw=0;if(v.views){var vs=String(v.views).replace(/[^0-9.만천억]/g,'');if(vs.includes('억'))vw=Math.round(parseFloat(vs)*1e8);else if(vs.includes('만'))vw=Math.round(parseFloat(vs)*1e4);else if(vs.includes('천'))vw=Math.round(parseFloat(vs)*1e3);else vw=parseInt(vs)||0;}
+        yvMap[v.link||'']=vw;
         ytTotalViews+=vw;
-        // 중복 제거: 같은 링크 없을 때만 추가
-        var exists=ytAllItems.some(function(e){return e.link===v.link;});
-        if(!exists){
-          ytAllItems.push({title:v.title||'',link:v.link||'',views:vw,channel:(v.channel&&v.channel.name)||'',date:v.published_date||'',type:'video'});
-        }else{
-          // 기존 항목에 조회수 병합
-          ytAllItems.forEach(function(e){if(e.link===v.link)e.views=vw;});
-        }
       });
-      ys.forEach(function(s){
-        ytAllItems.push({title:(s.title||'')+' [숏츠]',link:s.link||'',views:0,channel:(s.channel&&s.channel.name)||'',date:'',type:'shorts'});
+      // 기존 항목에 조회수 병합
+      ytAllItems.forEach(function(e){if(yvMap[e.link])e.views=yvMap[e.link];});
+      // 숏츠 (YouTube에서만 나옴 — 기간 확인 불가하므로 별도 표시)
+      (ytD.shorts_results||[]).slice(0,5).forEach(function(s){
+        ytAllItems.push({title:(s.title||'')+' [숏츠]',link:s.link||'',views:0,channel:(s.channel&&s.channel.name)||'',date:'최근',type:'shorts'});
       });
     }
     // 조회수순 정렬
@@ -240,7 +255,7 @@ module.exports = async (req, res) => {
     R.content.youtube=ytAllItems;
     R.summary.youtubeTotal=ytPeriodTotal;
     R.summary.youtubeViewTotal=ytTotalViews;
-    R.summary.dataSource.youtube='YouTube 기간 내 ('+dateFrom+'~'+dateTo+', '+ytPeriodTotal+'건, 조회 '+ytTotalViews.toLocaleString()+')';
+    R.summary.dataSource.youtube='YouTube 기간 내 ('+dateFrom+'~'+dateTo+', '+ytPeriodTotal+'건)';
     // ── 구글뉴스 ──
     if(gnD){
       var gn=(gnD.news_results||[]).slice(0,10);
