@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "node-fetch": "2",
-    "@supabase/supabase-js": "^2"
+    "@supabase/supabase-js": "^2",
+    "@vercel/kv": "^3.0.0"
   }
 }
