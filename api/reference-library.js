@@ -1,78 +1,129 @@
-// /api/reference-library.js
-// 수집한 레퍼런스 목록 조회/관리
-// GET  /api/reference-library?userId=xxx      → 사용자별 레퍼런스 리스트
-// POST /api/reference-library { action, ...} → save/delete/pin
+const fetch = require('node-fetch');
+// VERSION: 2026-04-16-REFERENCE-LIBRARY
+// 사용자별 레퍼런스 라이브러리 관리 (KV REST API 직접 호출)
 
-import { kv } from '@vercel/kv';
+async function kvGet(key) {
+  var url = process.env.KV_REST_API_URL;
+  var token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  try {
+    var r = await fetch(url + '/get/' + encodeURIComponent(key), {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!r.ok) return null;
+    var data = await r.json();
+    if (!data.result) return null;
+    try {
+      return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+    } catch (e) {
+      return data.result;
+    }
+  } catch (e) {
+    return null;
+  }
+}
 
-export default async function handler(req, res) {
+async function kvSet(key, value) {
+  var url = process.env.KV_REST_API_URL;
+  var token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return false;
+  try {
+    var r = await fetch(url + '/set/' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(value)
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const userId = req.query.userId || req.body?.userId || 'guest';
-  const userKey = `userlib:${userId}`;
+  var kvAvailable = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+
+  // KV 없으면 라이브러리 비활성 — 에러 대신 빈 결과
+  if (!kvAvailable) {
+    if (req.method === 'GET') {
+      return res.status(200).json({ items: [], _info: 'KV 캐시 미설정 — 라이브러리 비활성' });
+    }
+    return res.status(200).json({ ok: true, _info: 'KV 캐시 미설정 — 저장 스킵됨' });
+  }
+
+  var userId = (req.query.userId || (req.body && req.body.userId)) || 'guest';
+  var userKey = 'userlib:' + userId;
 
   try {
-    // 목록 조회
     if (req.method === 'GET') {
-      const list = (await kv.get(userKey)) || [];
-      // 각 레퍼런스의 실제 데이터는 별도 키에 저장 — 요약만 반환
-      return res.status(200).json({ userId, items: list });
+      var list = (await kvGet(userKey)) || [];
+      return res.status(200).json({ userId: userId, items: list });
     }
 
-    const body = req.body || {};
-    const action = body.action;
+    var body = req.body || {};
+    var action = body.action;
 
-    // 레퍼런스 저장 (수집 직후 호출)
     if (action === 'save') {
-      const { query, patterns, sourceCount } = body;
+      var query = body.query;
+      var patterns = body.patterns;
+      var sourceCount = body.sourceCount;
       if (!query) return res.status(400).json({ error: 'query required' });
 
-      const list = (await kv.get(userKey)) || [];
-      const existing = list.findIndex(x => x.query === query);
+      var list2 = (await kvGet(userKey)) || [];
+      var existing = -1;
+      for (var i = 0; i < list2.length; i++) {
+        if (list2[i].query === query) { existing = i; break; }
+      }
 
-      const entry = {
-        query,
-        summary: patterns?.topicSummary || '',
-        blogCount: sourceCount?.blogs || 0,
+      var entry = {
+        query: query,
+        summary: (patterns && patterns.topicSummary) || '',
+        blogCount: (sourceCount && sourceCount.blogs) || 0,
         savedAt: new Date().toISOString(),
-        pinned: existing >= 0 ? list[existing].pinned : false
+        pinned: existing >= 0 ? list2[existing].pinned : false
       };
 
       if (existing >= 0) {
-        list[existing] = { ...list[existing], ...entry };
+        list2[existing] = Object.assign({}, list2[existing], entry);
       } else {
-        list.unshift(entry);
+        list2.unshift(entry);
       }
 
-      // 최대 100개 유지
-      if (list.length > 100) list.length = 100;
+      if (list2.length > 100) list2.length = 100;
 
-      await kv.set(userKey, list);
-      return res.status(200).json({ ok: true, totalItems: list.length });
+      await kvSet(userKey, list2);
+      return res.status(200).json({ ok: true, totalItems: list2.length });
     }
 
-    // 삭제
     if (action === 'delete') {
-      const { query } = body;
-      const list = (await kv.get(userKey)) || [];
-      const filtered = list.filter(x => x.query !== query);
-      await kv.set(userKey, filtered);
+      var delQuery = body.query;
+      var list3 = (await kvGet(userKey)) || [];
+      var filtered = list3.filter(function (x) { return x.query !== delQuery; });
+      await kvSet(userKey, filtered);
       return res.status(200).json({ ok: true, totalItems: filtered.length });
     }
 
-    // 핀 고정 토글
     if (action === 'pin') {
-      const { query } = body;
-      const list = (await kv.get(userKey)) || [];
-      const item = list.find(x => x.query === query);
-      if (item) item.pinned = !item.pinned;
-      // 핀된 항목 위로
-      list.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-      await kv.set(userKey, list);
-      return res.status(200).json({ ok: true, pinned: item?.pinned });
+      var pinQuery = body.query;
+      var list4 = (await kvGet(userKey)) || [];
+      var pinned = false;
+      for (var j = 0; j < list4.length; j++) {
+        if (list4[j].query === pinQuery) {
+          list4[j].pinned = !list4[j].pinned;
+          pinned = list4[j].pinned;
+          break;
+        }
+      }
+      list4.sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
+      await kvSet(userKey, list4);
+      return res.status(200).json({ ok: true, pinned: pinned });
     }
 
     return res.status(400).json({ error: 'unknown action' });
@@ -80,4 +131,4 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
-}
+};
